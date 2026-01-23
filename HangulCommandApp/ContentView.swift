@@ -3,7 +3,6 @@ import Foundation
 
 struct ContentView: View {
     @StateObject private var keyMappingManager = KeyMappingManager.shared
-    @State private var isProcessing = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var alertTitle = ""
@@ -14,6 +13,7 @@ struct ContentView: View {
                 Image(systemName: "keyboard.fill")
                     .font(.system(size: 48))
                     .foregroundColor(.accentColor)
+                    .accessibilityLabel("키보드 아이콘")
                 
                 Text("한영 전환 앱")
                     .font(.largeTitle)
@@ -31,10 +31,12 @@ struct ContentView: View {
                     Image(systemName: keyMappingManager.isMappingEnabled ? "checkmark.circle.fill" : "xmark.circle.fill")
                         .font(.title2)
                         .foregroundColor(keyMappingManager.isMappingEnabled ? .green : .red)
+                        .accessibilityLabel(keyMappingManager.isMappingEnabled ? "활성화됨" : "비활성화됨")
                     
                     Text("현재 상태: \(keyMappingManager.isMappingEnabled ? "활성화" : "비활성화")")
                         .font(.title3)
                         .fontWeight(.medium)
+                        .accessibilityLabel("현재 상태: \(keyMappingManager.isMappingEnabled ? "활성화" : "비활성화")")
                 }
                 
                 Button(action: {
@@ -43,7 +45,7 @@ struct ContentView: View {
                     }
                 }) {
                     HStack {
-                        if isProcessing {
+                        if keyMappingManager.isLoading {
                             ProgressView()
                                 .scaleEffect(0.8)
                         } else {
@@ -59,7 +61,7 @@ struct ContentView: View {
                     .foregroundColor(.white)
                     .cornerRadius(12)
                 }
-                .disabled(isProcessing)
+                .disabled(keyMappingManager.isLoading)
             }
             .padding(20)
             .background(Color(NSColor.controlBackgroundColor))
@@ -105,6 +107,13 @@ struct ContentView: View {
             
             Spacer()
             
+            if let errorMessage = keyMappingManager.errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.horizontal)
+            }
+            
             Text("활성화 후 재부팅 필요 없음")
                 .font(.caption)
                 .foregroundColor(.secondary)
@@ -116,18 +125,23 @@ struct ContentView: View {
                 title: Text(alertTitle),
                 message: Text(alertMessage),
                 dismissButton: .default(Text("확인")) {
-                    isProcessing = false
+                    showingAlert = false
                 }
             )
         }
         .task {
-            keyMappingManager.checkCurrentStatus()
+            await keyMappingManager.checkCurrentStatus()
+        }
+        .onReceive(keyMappingManager.$errorMessage) { errorMessage in
+            if let errorMessage = errorMessage {
+                alertTitle = "오류"
+                alertMessage = errorMessage
+                showingAlert = true
+            }
         }
     }
     
     private func toggleMapping() async {
-        isProcessing = true
-        
         let success: Bool
         let targetState: String
         
@@ -139,16 +153,14 @@ struct ContentView: View {
             targetState = "활성화"
         }
         
-        await MainActor.run {
-            if success {
-                alertTitle = "성공"
-                alertMessage = "한영 전환이 성공적으로 \(targetState)되었습니다."
-            } else {
-                alertTitle = "오류"
-                alertMessage = "\(targetState)하는 중 오류가 발생했습니다. 관리자 비밀번호를 확인해주세요."
-            }
-            showingAlert = true
+        if success {
+            alertTitle = "성공"
+            alertMessage = "한영 전환이 성공적으로 \(targetState)되었습니다."
+        } else {
+            alertTitle = "오류"
+            alertMessage = "\(targetState)하는 중 오류가 발생했습니다. 관리자 비밀번호를 확인해주세요."
         }
+        showingAlert = true
     }
 }
 

@@ -5,6 +5,7 @@ struct HangulCommandAppApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(KeyMappingManager.shared)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -36,5 +37,6 @@ struct HangulCommandAppApp: App {
                 NSApplication.shared.terminate(nil)
             }
         }
+        .environmentObject(KeyMappingManager.shared)
     }
 }
