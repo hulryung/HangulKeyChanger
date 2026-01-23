@@ -1,0 +1,67 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Xcode
+*.xcodeproj/*
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/
+xcuserdata/
+*.xccheckout
+DerivedData/
+*.moved-aside
+*.pbxuser
+!default.pbxuser
+!default.mode1v3
+!default.mode2v3
+!default.perspectivev3
+
+# Build artifacts
+build/
+*.build/
+*.o
+*.lo
+*.so
+*.dylib
+*.a
+*.exe
+*.out
+*.app
+
+# Swift
+*.swift-version
+.swiftpm/
+.build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Package files
+*.dmg
+*.pkg
+*.zip
+
+# Backup files
+*~
+*.bak
+*.orig
+
+# Local configuration
+local.properties
