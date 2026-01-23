@@ -8,9 +8,10 @@ ehthumbs.db
 Thumbs.db
 
 # Xcode
-*.xcodeproj/*
 *.xcodeproj/project.xcworkspace/
 *.xcodeproj/xcuserdata/
+# Keep project.pbxproj (essential for building)
+!*.xcodeproj/project.pbxproj
 *.xcworkspace/
 xcuserdata/
 *.xccheckout

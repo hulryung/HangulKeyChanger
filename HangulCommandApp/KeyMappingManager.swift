@@ -121,8 +121,7 @@ class KeyMappingManager: ObservableObject {
             
             // Check for errors
             if process.terminationStatus != 0 {
-                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+                _ = errorPipe.fileHandleForReading.readDataToEndOfFile()
                 throw KeyMappingError.processFailed(process.terminationStatus)
             }
             
@@ -178,7 +177,7 @@ class KeyMappingManager: ObservableObject {
             try scriptContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
             
             // Set executable permissions securely
-            try executeProcess("/bin/chmod", arguments: ["755", scriptPath])
+            _ = try executeProcess("/bin/chmod", arguments: ["755", scriptPath])
             
             // Create LaunchAgent plist in temp first
             let plistContent = generateLaunchAgentPlist()
@@ -221,28 +220,19 @@ class KeyMappingManager: ObservableObject {
             errorMessage = nil
         }
         
-        do {
-            // Use secure AppleScript for removal
-            let success = await executeSecureAppleScript(
-                remove: launchAgentLabel,
-                plistPath: launchAgentPlistPath,
-                scriptPath: scriptPath
-            )
-            
-            if success {
-                await checkCurrentStatus()
-                return true
-            } else {
-                await MainActor.run {
-                    errorMessage = "LaunchAgent 제거에 실패했습니다."
-                    isLoading = false
-                }
-                return false
-            }
-            
-        } catch {
+        // Use secure AppleScript for removal
+        let success = await executeSecureAppleScript(
+            remove: launchAgentLabel,
+            plistPath: launchAgentPlistPath,
+            scriptPath: scriptPath
+        )
+        
+        if success {
+            await checkCurrentStatus()
+            return true
+        } else {
             await MainActor.run {
-                errorMessage = error.localizedDescription
+                errorMessage = "LaunchAgent 제거에 실패했습니다."
                 isLoading = false
             }
             return false
