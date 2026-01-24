@@ -15,11 +15,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Hide dock icon
         NSApp.setActivationPolicy(.accessory)
-
-        // 자동 시작 상태 확인 및 초기화
-        Task { @MainActor in
-            KeyMappingManager.shared.refreshLaunchAtLoginStatus()
-        }
     }
     
     @objc func togglePopover() {

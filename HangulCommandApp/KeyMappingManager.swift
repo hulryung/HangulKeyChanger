@@ -1,6 +1,5 @@
 import SwiftUI
 import Foundation
-import ServiceManagement
 
 enum KeyMappingError: LocalizedError {
     case directoryNotWritable
@@ -35,16 +34,8 @@ class KeyMappingManager: ObservableObject {
     @Published var isMappingEnabled = false
     @Published var isLoading = false
     @Published var errorMessage: String?
-    @Published var launchAtLogin: Bool = false {
-        didSet {
-            if oldValue != launchAtLogin {
-                updateLaunchAtLogin()
-            }
-        }
-    }
-    
+
     private let launchAgentLabel = "com.hangulcommand.userkeymapping"
-    private let hasLaunchedBeforeKey = "hasLaunchedBefore"
 
     private var launchAgentPlistPath: String {
         return "/Library/LaunchAgents/\(launchAgentLabel).plist"
@@ -55,55 +46,11 @@ class KeyMappingManager: ObservableObject {
     }
 
     private init() {
-        if #available(macOS 13.0, *) {
-            launchAtLogin = SMAppService.mainApp.status == .enabled
-
-            // 첫 실행 시 자동 시작 활성화
-            if !UserDefaults.standard.bool(forKey: hasLaunchedBeforeKey) {
-                UserDefaults.standard.set(true, forKey: hasLaunchedBeforeKey)
-                enableLaunchAtLoginOnFirstRun()
-            }
-        }
         Task {
             await checkCurrentStatus()
         }
     }
 
-    private func enableLaunchAtLoginOnFirstRun() {
-        guard #available(macOS 13.0, *) else { return }
-
-        do {
-            try SMAppService.mainApp.register()
-            launchAtLogin = true
-        } catch {
-            // 실패해도 앱 실행에 문제 없음
-        }
-    }
-    
-    // MARK: - Launch at Login
-    
-    private func updateLaunchAtLogin() {
-        guard #available(macOS 13.0, *) else { return }
-        
-        do {
-            if launchAtLogin {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            Task { @MainActor in
-                self.launchAtLogin = SMAppService.mainApp.status == .enabled
-                self.errorMessage = "로그인 시 자동 시작 설정 변경에 실패했습니다: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    func refreshLaunchAtLoginStatus() {
-        guard #available(macOS 13.0, *) else { return }
-        launchAtLogin = SMAppService.mainApp.status == .enabled
-    }
-    
     private func getSecureScriptPath() -> String {
         // Try system directory first, fallback to temp
         let systemPath = "/Users/Shared/bin/hangulkeymapping"
