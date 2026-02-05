@@ -69,26 +69,26 @@ struct ContentView: View {
             .shadow(radius: 2)
             
             VStack(alignment: .leading, spacing: 12) {
-                Text("설정 방법")
+                Text("사용 방법")
                     .font(.headline)
                     .fontWeight(.semibold)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     InstructionRow(
                         number: 1,
-                        text: "위 활성화 버튼을 클릭하여 오른쪽 커맨드키를 F18키로 변경"
+                        text: "위 활성화 버튼을 클릭 (관리자 비밀번호 입력)"
                     )
                     
                     InstructionRow(
                         number: 2,
-                        text: "시스템 환경설정 > 키보드 > 단축키 > 입력소스"
-                    )
-                    
-                    InstructionRow(
-                        number: 3,
-                        text: "'이전 입력소스 선택'의 단축키를 오른쪽 커맨드키로 설정"
+                        text: "오른쪽 커맨드키가 바로 한영 전환키로 동작합니다!"
                     )
                 }
+                
+                Text("💡 Lang1(한영) 키로 직접 매핑되므로 별도의 시스템 설정이 필요 없습니다.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 4)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -114,7 +114,7 @@ struct ContentView: View {
                     .padding(.horizontal)
             }
             
-            Text("활성화 후 재부팅 필요 없음")
+            Text("활성화 즉시 적용 · 재부팅 필요 없음")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -155,7 +155,7 @@ struct ContentView: View {
         
         if success {
             alertTitle = "성공"
-            alertMessage = "한영 전환이 성공적으로 \(targetState)되었습니다."
+            alertMessage = "한영 전환이 성공적으로 \(targetState)되었습니다.\n오른쪽 커맨드키로 한영 전환을 사용해 보세요!"
         } else {
             alertTitle = "오류"
             alertMessage = "\(targetState)하는 중 오류가 발생했습니다. 관리자 비밀번호를 확인해주세요."
