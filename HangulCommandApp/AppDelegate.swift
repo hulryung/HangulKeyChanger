@@ -4,61 +4,51 @@ import os
 
 private let logger = Logger(subsystem: "com.hangulcommand.app", category: "AppDelegate")
 
+@main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) var statusItem: NSStatusItem!
+    private(set) var windowController: MainWindowController!
     private var cancellable: AnyCancellable?
+    private var statusMenuItem: NSMenuItem!
+
+    nonisolated static func main() {
+        let app = NSApplication.shared
+        let delegate = AppDelegate()
+        app.delegate = delegate
+        app.run()
+    }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         logger.notice("applicationDidFinishLaunching started")
         NSApp.setActivationPolicy(.accessory)
-        setupStatusItem()
 
-        // Override close button to hide instead of destroy
-        DispatchQueue.main.async {
-            if let window = NSApp.windows.first(where: { $0.canBecomeMain }),
-               let closeButton = window.standardWindowButton(.closeButton) {
-                closeButton.target = self
-                closeButton.action = #selector(self.hideMainWindow)
-                logger.notice("Close button overridden")
-            }
-        }
+        windowController = MainWindowController(viewController: MainViewController())
+        setupStatusItem()
 
         let event = NSAppleEventManager.shared().currentAppleEvent
         let isLoginLaunch = event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
-        let showIcon = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
 
-        logger.notice("isLoginLaunch=\(isLoginLaunch), showMenuBarIcon=\(showIcon)")
+        logger.notice("isLoginLaunch=\(isLoginLaunch)")
 
         if isLoginLaunch {
             logger.notice("Hiding main window (login item launch)")
-            DispatchQueue.main.async {
-                for window in NSApp.windows where window.canBecomeMain {
-                    window.orderOut(nil)
-                }
-            }
         } else {
             logger.notice("Manual launch - showing main window")
+            windowController.showAndActivate()
         }
 
         logger.notice("applicationDidFinishLaunching done")
-    }
-
-    @objc func hideMainWindow() {
-        logger.notice("hideMainWindow called")
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.orderOut(nil)
-        }
     }
 
     // MARK: - Status Item
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "한영 전환")
+        statusItem.button?.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "Hangul Key Changer")
 
         let menu = NSMenu()
-        let statusMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        statusMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
         statusMenuItem.isEnabled = false
 
         menu.addItem(.separator())
@@ -67,22 +57,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(withTitle: "종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         statusItem.menu = menu
-
-        let showIcon = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
-        statusItem.isVisible = showIcon
-        logger.notice("setupStatusItem done, isVisible=\(showIcon)")
+        logger.notice("setupStatusItem done")
 
         let manager = KeyMappingManager.shared
-        updateStatusTitle(statusMenuItem, enabled: manager.isMappingEnabled)
+        updateStatusTitle(enabled: manager.isMappingEnabled)
         cancellable = manager.$isMappingEnabled
             .receive(on: RunLoop.main)
             .sink { [weak self] enabled in
-                self?.updateStatusTitle(statusMenuItem, enabled: enabled)
+                self?.updateStatusTitle(enabled: enabled)
             }
     }
 
-    private func updateStatusTitle(_ item: NSMenuItem, enabled: Bool) {
-        item.title = enabled ? "활성화됨" : "비활성화됨"
+    private func updateStatusTitle(enabled: Bool) {
+        statusMenuItem.title = enabled ? "활성화됨" : "비활성화됨"
     }
 
     // MARK: - App Lifecycle
@@ -97,12 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc func showMainWindow() {
         logger.notice("showMainWindow called")
-        NSApp.activate(ignoringOtherApps: true)
-
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.makeKeyAndOrderFront(nil)
-            window.center()
-        }
+        windowController.showAndActivate()
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

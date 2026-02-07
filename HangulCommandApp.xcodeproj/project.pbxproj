@@ -7,22 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1B2C3D4E5F60001 /* HangulCommandAppApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60011 /* HangulCommandAppApp.swift */; };
-		A1B2C3D4E5F60002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60012 /* ContentView.swift */; };
 		A1B2C3D4E5F60003 /* KeyMappingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60013 /* KeyMappingManager.swift */; };
 		A1B2C3D4E5F60004 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60014 /* AppDelegate.swift */; };
-		A1B2C3D4E5F60005 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60017 /* SettingsView.swift */; };
+		A1B2C3D4E5F60006 /* MainWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60018 /* MainWindowController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		A1B2C3D4E5F60010 /* HangulCommandApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HangulCommandApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A1B2C3D4E5F60011 /* HangulCommandAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangulCommandAppApp.swift; sourceTree = "<group>"; };
-		A1B2C3D4E5F60012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60013 /* KeyMappingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyMappingManager.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60014 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D4E5F60016 /* HangulCommandApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HangulCommandApp.entitlements; sourceTree = "<group>"; };
-		A1B2C3D4E5F60017 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F60018 /* MainWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,11 +43,9 @@
 		A1B2C3D4E5F60031 /* HangulCommandApp */ = {
 			isa = PBXGroup;
 			children = (
-				A1B2C3D4E5F60011 /* HangulCommandAppApp.swift */,
-				A1B2C3D4E5F60012 /* ContentView.swift */,
-				A1B2C3D4E5F60013 /* KeyMappingManager.swift */,
 				A1B2C3D4E5F60014 /* AppDelegate.swift */,
-				A1B2C3D4E5F60017 /* SettingsView.swift */,
+				A1B2C3D4E5F60018 /* MainWindowController.swift */,
+				A1B2C3D4E5F60013 /* KeyMappingManager.swift */,
 				A1B2C3D4E5F60015 /* Info.plist */,
 				A1B2C3D4E5F60016 /* HangulCommandApp.entitlements */,
 			);
@@ -135,11 +129,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1B2C3D4E5F60001 /* HangulCommandAppApp.swift in Sources */,
-				A1B2C3D4E5F60002 /* ContentView.swift in Sources */,
 				A1B2C3D4E5F60003 /* KeyMappingManager.swift in Sources */,
 				A1B2C3D4E5F60004 /* AppDelegate.swift in Sources */,
-				A1B2C3D4E5F60005 /* SettingsView.swift in Sources */,
+				A1B2C3D4E5F60006 /* MainWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,7 +267,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = HangulCommandApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "한영 전환 앱";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hangul Key Changer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -301,7 +293,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = HangulCommandApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "한영 전환 앱";
+				INFOPLIST_KEY_CFBundleDisplayName = "Hangul Key Changer";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (

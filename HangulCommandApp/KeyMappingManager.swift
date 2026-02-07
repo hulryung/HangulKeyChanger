@@ -1,5 +1,5 @@
-import SwiftUI
-import Foundation
+import Cocoa
+import Combine
 
 // MARK: - Key Info
 
