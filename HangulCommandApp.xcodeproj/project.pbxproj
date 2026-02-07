@@ -11,6 +11,7 @@
 		A1B2C3D4E5F60002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60012 /* ContentView.swift */; };
 		A1B2C3D4E5F60003 /* KeyMappingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60013 /* KeyMappingManager.swift */; };
 		A1B2C3D4E5F60004 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60014 /* AppDelegate.swift */; };
+		A1B2C3D4E5F60005 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60017 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +22,7 @@
 		A1B2C3D4E5F60014 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F60015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D4E5F60016 /* HangulCommandApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HangulCommandApp.entitlements; sourceTree = "<group>"; };
+		A1B2C3D4E5F60017 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -49,6 +51,7 @@
 				A1B2C3D4E5F60012 /* ContentView.swift */,
 				A1B2C3D4E5F60013 /* KeyMappingManager.swift */,
 				A1B2C3D4E5F60014 /* AppDelegate.swift */,
+				A1B2C3D4E5F60017 /* SettingsView.swift */,
 				A1B2C3D4E5F60015 /* Info.plist */,
 				A1B2C3D4E5F60016 /* HangulCommandApp.entitlements */,
 			);
@@ -136,6 +139,7 @@
 				A1B2C3D4E5F60002 /* ContentView.swift in Sources */,
 				A1B2C3D4E5F60003 /* KeyMappingManager.swift in Sources */,
 				A1B2C3D4E5F60004 /* AppDelegate.swift in Sources */,
+				A1B2C3D4E5F60005 /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -125,6 +125,10 @@ struct ContentView: View {
                     .font(.caption)
                     .foregroundColor(.red)
             }
+
+            Divider()
+
+            SettingsView()
         }
         .padding(20)
         .frame(width: 340)
