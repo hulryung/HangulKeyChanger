@@ -1,291 +1,60 @@
-# 한영 전환 앱 (Hangul Command App)
+# Hangul Key Changer
 
-오른쪽 커맨드키를 한영키로 사용하는 간단한 macOS 유틸리티 앱입니다.
+Remap any key to toggle Korean/English input on macOS.
 
-![macOS](https://img.shields.io/badge/macOS-13%2B-blue)
+원하는 키를 한영 전환키로 사용할 수 있는 macOS 유틸리티입니다.
+
+![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.0-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 🎯 특징
+<p align="center">
+  <img src="screenshot.png" alt="Hangul Key Changer" width="400">
+</p>
 
-- **🔧 간단한 토글**: 한 번 클릭으로 오른쪽 커맨드키 → F18 키 매핑 활성화/비활성화
-- **📱 메뉴 바 통합**: 메뉴 바에서 직접 제어 가능
-- **🚀 자동 시작**: LaunchAgent를 통해 부팅 시 자동 적용
-- **🔐 관리자 권한 처리**: 안전한 권한 요청 및 처리
-- **↩️ 되돌리기 기능**: 언제든지 원래 상태로 되돌릴 수 있음
-- **🇰🇷 한국어 인터페이스**: 완벽한 한국어 UI 지원
+## Features
 
-## 📸 스크린샷
+- **Key remapping** — Set any key (Right Command, Caps Lock, etc.) as the input toggle key
+- **One-click enable/disable** — Activates key mapping + system shortcut automatically
+- **Persists after reboot** — LaunchAgent keeps it working without the app running
+- **Menu bar control** — Quick access from the status bar
+- **Korean / English UI** — Automatically follows system language
 
-```
-┌─────────────────────────────────────┐
-│       ⌨️  한영 전환 앱           │
-│   오른쪽 커맨드키를 한영키로 사용   │
-├─────────────────────────────────────┤
-│  ✅ 현재 상태: 비활성화          │
-│  [ 활성화 ]                      │
-├─────────────────────────────────────┤
-│  설정 방법                      │
-│  1. 위 활성화 버튼을 클릭         │
-│  2. 시스템 환경설정 > 키보드      │
-│  3. F18키로 단축키 설정           │
-│  [시스템 환경설정 열기]          │
-├─────────────────────────────────────┤
-│  활성화 후 재부팅 필요 없음        │
-└─────────────────────────────────────┘
-```
+## Install
 
-## 🚀 설치 방법
+Download the latest `.zip` from [Releases](https://github.com/hulryung/hangul-command-app/releases), unzip, and move to `/Applications`.
 
-### 방법 1: 소스에서 직접 빌드
+> On first launch, right-click → Open to bypass Gatekeeper, or run:
+> ```bash
+> xattr -cr /Applications/HangulCommandApp.app
+> ```
+
+## Usage
+
+1. Click **Change** to pick your toggle key
+2. Click **Enable** and enter your admin password
+3. Done — the key now toggles Korean/English input
+
+## Uninstall
+
+Click **Disable** in the app to restore all settings, then delete the app.
+
+## Build from source
 
 ```bash
-# 저장소 클론
 git clone https://github.com/hulryung/hangul-command-app.git
 cd hangul-command-app
-
-# Xcode로 열기
-open HangulCommandApp.xcodeproj
+xcodebuild -scheme HangulCommandApp build
 ```
 
-### 방법 2: 미리 빌드된 앱 (추천)
+## License
 
-```bash
-# 릴리즈 다운로드
-curl -L -o HangulCommandApp.zip https://github.com/hulryung/hangul-command-app/releases/latest/download/HangulCommandApp-1.0.0.zip
-
-# 압축 해제 및 설치
-unzip HangulCommandApp.zip
-cp -R HangulCommandApp.app /Applications/
-```
-
-### 방법 3: 빌드 가이드
-
-자세한 빌드 방법은 [BUILD.md](BUILD.md)를 참고하세요.
-
-```bash
-# 빌드 스크립트 실행 (권한 부여 필요)
-chmod +x build.sh
-./build.sh
-```
-
-### 방법 4: 다운로드 및 설치
-
-GitHub 릴리즈 페이지에서 최신 버전을 다운로드하여 설치할 수 있습니다.
-
-```bash
-# 최신 릴리즈 다운로드
-curl -s https://api.github.com/repos/hulryung/hangul-command-app/releases/latest | \
-  grep "browser_download_url.*zip" | \
-  cut -d '"' -f 4
-
-# 또는 버전 지정 다운로드
-curl -L -o HangulCommandApp.zip https://github.com/hulryung/hangul-command-app/releases/download/v1.0.0/HangulCommandApp-1.0.0.zip
-
-# 압축 해제 및 설치
-unzip HangulCommandApp.zip -d /tmp/
-cp -R /tmp/HangulCommandApp.app /Applications/
-rm -rf /tmp/HangulCommandApp*
-```
-
-### 방법 5: 명령어로 테스트
-
-```bash
-# 현재 상태 확인
-launchctl list | grep com.hangulcommand.userkeymapping
-
-# 수동 키 매핑 테스트 (테스트 목적)
-hidutil property --set '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x7000000e7,"HIDKeyboardModifierMappingDst":0x70000006d}]}'
-
-# 설정 초기화
-hidutil property --set '{"UserKeyMapping":[]}'
-```
-
-## ⚠️ 첫 실행 시 보안 경고
-
-앱을 처음 실행하면 다음과 같은 경고가 표시될 수 있습니다:
-
-> "HangulCommandApp"은(는) Apple에서 악성 소프트웨어가 있는지 확인할 수 없기 때문에 열 수 없습니다.
-
-이는 앱이 Apple Developer 인증서로 서명되지 않아서 나타나는 macOS Gatekeeper 경고입니다. **앱은 안전합니다.**
-
-### 해결 방법 1: 우클릭으로 열기 (권장)
-
-1. Finder에서 `HangulCommandApp.app` 찾기
-2. **우클릭** (또는 Control + 클릭)
-3. **"열기"** 선택
-4. 경고창에서 **"열기"** 클릭
-
-### 해결 방법 2: 시스템 설정에서 허용
-
-1. **시스템 설정** → **개인정보 보호 및 보안**
-2. 아래로 스크롤하면 "HangulCommandApp이 차단됨" 메시지 표시
-3. **"그래도 열기"** 클릭
-
-### 해결 방법 3: 터미널에서 quarantine 속성 제거
-
-```bash
-xattr -cr /Applications/HangulCommandApp.app
-```
-
-> 💡 한 번만 허용하면 이후에는 경고 없이 실행됩니다.
-
-## 💻 사용 방법
-
-### 1단계: 앱에서 활성화
-1. 앱 실행 또는 메뉴 바 아이콘 클릭
-2. "활성화" 버튼 클릭
-3. 관리자 비밀번호 입력 (최초 1회만)
-
-### 2단계: 시스템 환경설정
-1. 시스템 환경설정 > 키보드 > 단축키
-2. "입력소스" 선택
-3. "이전 입력소스 선택"의 단축키로 오른쪽 커맨드키 설정
-
-### ✨ 완료!
-이제 오른쪽 커맨드키를 누르면 한영 전환이 됩니다.
-
-## 🗑️ 제거 방법
-
-### 방법 1: 앱에서 제거
-앱에서 "비활성화" 버튼을 누르면 모든 설정이 원래대로 복원됩니다.
-
-### 방법 2: 수동 제거
-```bash
-# LaunchAgent 제거
-sudo launchctl remove com.hangulcommand.userkeymapping
-
-# 시스템 파일 제거
-sudo rm -f /Library/LaunchAgents/com.hangulcommand.userkeymapping.plist
-sudo rm -f /Users/Shared/bin/hangulkeymapping
-
-# 임시 파일 정리 (필요시)
-rm -f /tmp/hangulkeymapping
-```
-
-## ⚙️ 기술 원리
-
-이 앱은 블로그 [맥에서 오른쪽 커맨드키를 한영 변환키로 쓰기](https://juil.dev/mac-right-command-to-hangul/)의 방법을 구현한 것입니다.
-
-1. **HID 유틸리티**: `hidutil`을 사용하여 오른쪽 커맨드키(0xE7)를 F18키(0x6D)로 매핑
-2. **LaunchAgent**: `/Library/LaunchAgents/`에 등록하여 부팅 시 자동 실행
-3. **시스템 환경설정**: F18키를 입력소스 전환 단축키로 설정
-
-## 🔧 개발 환경
-
-- **Xcode**: 15.0+
-- **Swift**: 5.0
-- **macOS**: 13.0+ (Ventura 이상)
-- **아키텍처**: Intel & Apple Silicon (Universal)
-
-## 📋 요구 사항
-
-- **macOS**: 13.0 이상
-- **권한**: 관리자 권한 (최초 설정 시)
-- **메모리**: 최소 50MB 여유 공간
-
-## 🔒 보안
-
-이 앱은 다음 권한만 요청합니다:
-
-| 권한 | 목적 | 필수 여부 |
-|--------|--------|------------|
-| AppleEvents | 관리자 권한으로 스크립트 실행 | ✅ 필수 |
-| 파일 시스템 | LaunchAgent 및 스크립트 파일 생성 | ✅ 필수 |
-
-- **✅ 로컬 전용**: 모든 작업은 로컬에서만 실행
-- **🚫 네트워크 없음**: 완전히 오프라인으로 동작
-- **🔄 완벽 복원**: 언제든지 원래 상태로 되돌릴 수 있음
-
-## 🏗️ 빌드 및 배포
-
-### 개발자용 빌드
-
-```bash
-# 코드 사인
-codesign --force --deep --sign "Developer ID Application: Your Name" HangulCommandApp.app
-
-# 공증(notarization) 처리
-xcrun altool --notarize-app \
-  --primary-bundle-id "com.hulryung.hangulcommandapp" \
-  --username "your@email.com" \
-  --password "@keychain:AC_PASSWORD" \
-  --file HangulCommandApp.zip
-
-# 공증 티켓 부착
-xcrun stapler staple HangulCommandApp.app
-```
-
-### 배포
-
-```bash
-# 설치 패키지 생성
-pkgbuild --install-location /Applications \
-  --identifier com.hulryung.hangulcommandapp \
-  --version 1.0 \
-  --scripts Scripts \
-  HangulCommandApp.pkg
-```
-
-## 🐛 버그 리포트
-
-버그 발견 시 [Issues](https://github.com/hulryung/hangul-command-app/issues)에 등록해주세요.
-
-### 리포트 형식
-- **macOS 버전**: (예: 14.0 Sonoma)
-- **앱 버전**: (예: 1.0.0)
-- **재현 단계**: 구체적인 단계별 설명
-- **기대 결과**: 예상되는 동작
-- **실제 결과**: 실제 발생한 현상
-- **추가 정보**: 에러 메시지, 시스템 로그 등
-
-### 📋 자주 발생하는 문제
-
-| 문제 | 원인 | 해결 방법 |
-|------|------|----------|
-| 관리자 권한 오류 | 시스템 설정 > 개인정보 & 보안 > 접근성에서 앱 허용 필요 | [해결 방법](#️-권한-설정-방법) |
-| 한영 전환이 안됨 | 시스템 환경설정에서 F18 키 설정이 필요 | [설정 방법](#2단계-시스템-환경설정) |
-| 앱 충돌 | LaunchAgent 충돌 발생 시 | [수동 제거](#방법-2-수동-제거) 실행 |
-
-### ⚙️ 권한 설정 방법
-
-1. **시스템 환경설정** → 개인정보 & 보안 → 접근성
-2. **개인정보 & 보안** → 접근성
-3. **파인더에서 앱 추가** → `/Applications/HangulCommandApp.app` 선택
-4. **관리자 비밀번호 입력** 후 허용 클릭
-
-## 🤝 기여
-
-기여는 언제나 환영합니다!
-
-1. 저장소 포크 (`Fork`)
-2. 기능 브랜치 생성 (`git checkout -b feature/amazing-feature`)
-3. 커밋 (`git commit -m 'Add amazing feature'`)
-4. 푸시 (`git push origin feature/amazing-feature`)
-5. 풀 리퀘스트 생성 (`Pull Request`)
-
-## 📜 라이선스
-
-이 프로젝트는 [MIT License](LICENSE) 하에 배포됩니다.
-
-## 🙏 제작 정보
-
-- **기반**: 블로그 글 기반 구현
-- **제작**: hulryung
-- **감사**: 원작성자에게 감사
-
-### 🔗 관련 링크
-
-- [원작 블로그](https://juil.dev/mac-right-command-to-hangul/)
-- [Karabiner-Elements](https://github.com/pqrs-org/Karabiner-Elements) (고급 키 리매퍼)
-- [Apple HID Usage Tables](https://developer.apple.com/library/archive/technotes/tn2450/_index.html)
+[MIT](LICENSE)
 
 ---
 
 <div align="center">
 
-**⭐ 이 리포지토리가 도움이 되었다면 별을 눌러주세요!**
-
-[![GitHub stars](https://img.shields.io/github/stars/hulryung/hangul-command-app?style=social)](https://github.com/hulryung/hangul-command-app/stargazers)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-yellow)](https://buymeacoffee.com/hulryung)
 
 </div>
