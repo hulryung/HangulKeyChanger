@@ -126,7 +126,7 @@ class MainViewController: NSViewController {
         titleStack.spacing = 2
 
         let title = makeLabel("Hangul Key Changer", size: 17, weight: .bold)
-        let subtitle = makeLabel("원하는 키를 한영키로 사용", size: 12, color: .secondaryLabelColor)
+        let subtitle = makeLabel(String(localized: "app.subtitle"), size: 12, color: .secondaryLabelColor)
 
         titleStack.addArrangedSubview(title)
         titleStack.addArrangedSubview(subtitle)
@@ -160,14 +160,14 @@ class MainViewController: NSViewController {
         keyIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
         keyIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        let keyTitle = makeLabel("전환 키", size: 12, color: .secondaryLabelColor)
+        let keyTitle = makeLabel(String(localized: "key.switch"), size: 12, color: .secondaryLabelColor)
         keyTitle.setContentHuggingPriority(.required, for: .horizontal)
 
         keyLabel = makeLabel(manager.sourceKeyInfo.displayName, size: 13, weight: .medium)
         keyLabel.alignment = .right
         keyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        changeKeyButton = NSButton(title: "변경", target: self, action: #selector(changeKeyTapped))
+        changeKeyButton = NSButton(title: String(localized: "button.change"), target: self, action: #selector(changeKeyTapped))
         changeKeyButton.bezelStyle = .rounded
         changeKeyButton.controlSize = .small
         changeKeyButton.setContentHuggingPriority(.required, for: .horizontal)
@@ -195,10 +195,10 @@ class MainViewController: NSViewController {
         statusIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
         statusIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        let statusTitle = makeLabel("상태", size: 12, color: .secondaryLabelColor)
+        let statusTitle = makeLabel(String(localized: "status"), size: 12, color: .secondaryLabelColor)
         statusTitle.setContentHuggingPriority(.required, for: .horizontal)
 
-        statusLabel = makeLabel("비활성화", size: 13, weight: .medium)
+        statusLabel = makeLabel(String(localized: "status.disabled"), size: 13, weight: .medium)
         statusLabel.textColor = .systemRed
         statusLabel.alignment = .right
 
@@ -210,7 +210,7 @@ class MainViewController: NSViewController {
         statusRow.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -28).isActive = true
 
         // Toggle button
-        toggleButton = NSButton(title: "활성화", target: self, action: #selector(toggleTapped))
+        toggleButton = NSButton(title: String(localized: "button.enable"), target: self, action: #selector(toggleTapped))
         toggleButton.bezelStyle = .rounded
         toggleButton.isBordered = false
         toggleButton.wantsLayer = true
@@ -235,7 +235,7 @@ class MainViewController: NSViewController {
         stack.alignment = .leading
         stack.spacing = 8
 
-        let sectionTitle = makeLabel("사용 방법", size: 12, weight: .semibold)
+        let sectionTitle = makeLabel(String(localized: "instructions.title"), size: 12, weight: .semibold)
         stack.addArrangedSubview(sectionTitle)
 
         let rows = NSStackView()
@@ -243,12 +243,12 @@ class MainViewController: NSViewController {
         rows.alignment = .leading
         rows.spacing = 6
 
-        rows.addArrangedSubview(makeInstructionRow(number: 1, text: "\"변경\" 버튼으로 한영 전환 키 설정"))
-        rows.addArrangedSubview(makeInstructionRow(number: 2, text: "활성화 클릭 (관리자 비밀번호 입력)"))
+        rows.addArrangedSubview(makeInstructionRow(number: 1, text: String(localized: "instructions.step1")))
+        rows.addArrangedSubview(makeInstructionRow(number: 2, text: String(localized: "instructions.step2")))
         stack.addArrangedSubview(rows)
 
         let note = makeLabel(
-            "활성화하면 키 매핑과 입력 소스 단축키가 자동 설정됩니다.\n앱을 종료해도 계속 동작합니다.",
+            String(localized: "instructions.note"),
             size: 10,
             color: .secondaryLabelColor
         )
@@ -318,7 +318,7 @@ class MainViewController: NSViewController {
             .receive(on: RunLoop.main)
             .sink { [weak self] loading in
                 self?.toggleButton.isEnabled = !loading
-                self?.toggleButton.title = loading ? "처리 중..." : (self?.manager.isMappingEnabled == true ? "비활성화" : "활성화")
+                self?.toggleButton.title = loading ? String(localized: "button.processing") : (self?.manager.isMappingEnabled == true ? String(localized: "button.disable") : String(localized: "button.enable"))
             }
             .store(in: &cancellables)
 
@@ -352,11 +352,11 @@ class MainViewController: NSViewController {
         )
         statusIcon.contentTintColor = enabled ? .controlAccentColor : .systemGray
 
-        statusLabel.stringValue = enabled ? "활성화" : "비활성화"
+        statusLabel.stringValue = enabled ? String(localized: "status.enabled") : String(localized: "status.disabled")
         statusLabel.textColor = enabled ? .systemGreen : .systemRed
 
         // Toggle button
-        toggleButton.title = enabled ? "비활성화" : "활성화"
+        toggleButton.title = enabled ? String(localized: "button.disable") : String(localized: "button.enable")
         toggleButton.layer?.backgroundColor = enabled ? NSColor.systemRed.cgColor : NSColor.controlAccentColor.cgColor
 
         // Change key button disabled while active
@@ -365,10 +365,10 @@ class MainViewController: NSViewController {
 
     private func showErrorAlert(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = "오류"
+        alert.messageText = String(localized: "error.title")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "확인")
+        alert.addButton(withTitle: String(localized: "button.confirm"))
         if let window = view.window {
             alert.beginSheetModal(for: window)
         }
@@ -381,12 +381,12 @@ class MainViewController: NSViewController {
             if manager.isMappingEnabled {
                 let success = await manager.disableMapping()
                 if !success {
-                    showErrorAlert("비활성화 중 오류가 발생했습니다. 관리자 비밀번호를 확인해주세요.")
+                    showErrorAlert(String(localized: "error.disable"))
                 }
             } else {
                 let success = await manager.enableMapping()
                 if !success {
-                    showErrorAlert("활성화 중 오류가 발생했습니다. 관리자 비밀번호를 확인해주세요.")
+                    showErrorAlert(String(localized: "error.enable"))
                 }
             }
         }
@@ -502,13 +502,13 @@ class KeyCaptureSheetViewController: NSViewController {
         iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 40, weight: .regular)
         stack.addArrangedSubview(iconView)
 
-        mainLabel = NSTextField(labelWithString: "한영 전환에 사용할 키를\n눌러주세요")
+        mainLabel = NSTextField(labelWithString: String(localized: "keycapture.prompt"))
         mainLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         mainLabel.alignment = .center
         mainLabel.maximumNumberOfLines = 0
         stack.addArrangedSubview(mainLabel)
 
-        subLabel = NSTextField(labelWithString: "커맨드, 옵션, 쉬프트 등 수정자 키도 감지됩니다")
+        subLabel = NSTextField(labelWithString: String(localized: "keycapture.hint"))
         subLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
         subLabel.textColor = .secondaryLabelColor
         subLabel.alignment = .center
@@ -518,7 +518,7 @@ class KeyCaptureSheetViewController: NSViewController {
         buttonsStack.orientation = .horizontal
         buttonsStack.spacing = 12
 
-        let cancelButton = NSButton(title: "취소", target: self, action: #selector(cancelTapped))
+        let cancelButton = NSButton(title: String(localized: "button.cancel"), target: self, action: #selector(cancelTapped))
         cancelButton.bezelStyle = .rounded
         cancelButton.controlSize = .small
         buttonsStack.addArrangedSubview(cancelButton)
@@ -541,10 +541,10 @@ class KeyCaptureSheetViewController: NSViewController {
         // Replace buttons
         buttonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        let retryButton = NSButton(title: "다시 입력", target: self, action: #selector(retryTapped))
+        let retryButton = NSButton(title: String(localized: "button.retry"), target: self, action: #selector(retryTapped))
         retryButton.bezelStyle = .rounded
 
-        let confirmButton = NSButton(title: "확인", target: self, action: #selector(confirmTapped))
+        let confirmButton = NSButton(title: String(localized: "button.confirm"), target: self, action: #selector(confirmTapped))
         confirmButton.bezelStyle = .rounded
         confirmButton.keyEquivalent = "\r"
 
@@ -571,14 +571,14 @@ class KeyCaptureSheetViewController: NSViewController {
 
     @objc private func retryTapped() {
         subLabel.isHidden = false
-        mainLabel.stringValue = "한영 전환에 사용할 키를\n눌러주세요"
+        mainLabel.stringValue = String(localized: "keycapture.prompt")
         mainLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         iconView.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
         iconView.contentTintColor = .controlAccentColor
 
         // Reset buttons
         buttonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let cancelButton = NSButton(title: "취소", target: self, action: #selector(cancelTapped))
+        let cancelButton = NSButton(title: String(localized: "button.cancel"), target: self, action: #selector(cancelTapped))
         cancelButton.bezelStyle = .rounded
         cancelButton.controlSize = .small
         buttonsStack.addArrangedSubview(cancelButton)

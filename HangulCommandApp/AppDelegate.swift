@@ -52,9 +52,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusMenuItem.isEnabled = false
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: "열기", action: #selector(showMainWindow), keyEquivalent: "")
+        menu.addItem(withTitle: String(localized: "menu.open"), action: #selector(showMainWindow), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "종료", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.addItem(withTitle: String(localized: "menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         statusItem.menu = menu
         logger.notice("setupStatusItem done")
@@ -69,7 +69,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func updateStatusTitle(enabled: Bool) {
-        statusMenuItem.title = enabled ? "활성화됨" : "비활성화됨"
+        statusMenuItem.title = enabled ? String(localized: "menu.status.enabled") : String(localized: "menu.status.disabled")
     }
 
     // MARK: - App Lifecycle

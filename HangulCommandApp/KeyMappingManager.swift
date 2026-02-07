@@ -108,17 +108,17 @@ enum KeyMappingError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .directoryNotWritable:
-            return "디렉터리에 쓰기 권한이 없습니다."
+            return String(localized: "error.directoryNotWritable")
         case .processFailed(let code):
-            return "프로세스 실행 실패 (종료 코드: \(code))"
+            return String(localized: "error.processFailed \(code)")
         case .appleScriptExecutionFailed:
-            return "AppleScript 실행에 실패했습니다."
+            return String(localized: "error.appleScriptFailed")
         case .permissionDenied:
-            return "권한이 거부되었습니다."
+            return String(localized: "error.permissionDenied")
         case .pathValidationFailed:
-            return "경로 유효성 검사에 실패했습니다."
+            return String(localized: "error.pathValidation")
         case .launchAgentNotFound:
-            return "LaunchAgent를 찾을 수 없습니다."
+            return String(localized: "error.launchAgentNotFound")
         }
     }
 }
@@ -343,7 +343,7 @@ class KeyMappingManager: ObservableObject {
                 return true
             } else {
                 await MainActor.run {
-                    errorMessage = "LaunchAgent 설치에 실패했습니다."
+                    errorMessage = String(localized: "error.launchAgent")
                     isLoading = false
                 }
                 return false
