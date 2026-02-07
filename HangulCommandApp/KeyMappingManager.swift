@@ -288,8 +288,16 @@ class KeyMappingManager: ObservableObject {
         let plistExists = FileManager.default.fileExists(atPath: launchAgentPlistPath)
         let scriptExists = FileManager.default.fileExists(atPath: scriptPath)
 
+        // Check actual hidutil state to confirm mapping is active
+        var hidutilActive = false
+        if let data = try? executeProcess("/usr/bin/hidutil", arguments: ["property", "--get", "UserKeyMapping"]),
+           let output = String(data: data, encoding: .utf8) {
+            hidutilActive = output.contains("HIDKeyboardModifierMappingSrc")
+        }
+
         await MainActor.run {
-            self.isMappingEnabled = plistExists && scriptExists
+            // Both conditions: files exist for persistence AND hidutil is active now
+            self.isMappingEnabled = (plistExists && scriptExists) && hidutilActive
             self.isLoading = false
         }
     }
@@ -355,29 +363,33 @@ class KeyMappingManager: ObservableObject {
             errorMessage = nil
         }
 
+        // Clear hidutil mapping (no admin needed, this is the critical operation)
         _ = try? executeProcess("/usr/bin/hidutil", arguments: [
             "property", "--set",
             "{\"UserKeyMapping\":[]}"
         ])
 
+        // Restore default input source shortcut (no admin needed)
         restoreDefaultInputSourceShortcut()
 
-        let success = await executeSecureAppleScript(
+        // Remove LaunchAgent files (best-effort, requires admin)
+        // Even if this fails, the mapping is already cleared for this session
+        let cleanupSuccess = await executeSecureAppleScript(
             remove: launchAgentLabel,
             plistPath: launchAgentPlistPath,
             scriptPath: scriptPath
         )
 
-        if success {
-            await checkCurrentStatus()
-            return true
-        } else {
-            await MainActor.run {
-                errorMessage = "LaunchAgent 제거에 실패했습니다."
-                isLoading = false
+        await MainActor.run {
+            self.isMappingEnabled = false
+            self.isLoading = false
+            if !cleanupSuccess {
+                // Files may remain but mapping is cleared for this session
+                // On next reboot, the mapping may re-activate from LaunchAgent
+                print("LaunchAgent cleanup failed, files may remain")
             }
-            return false
         }
+        return true
     }
 
     // MARK: - Input Source Shortcut
