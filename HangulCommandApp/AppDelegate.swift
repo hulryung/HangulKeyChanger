@@ -52,9 +52,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusMenuItem.isEnabled = false
 
         menu.addItem(.separator())
-        menu.addItem(withTitle: String(localized: "menu.open"), action: #selector(showMainWindow), keyEquivalent: "")
+        let openItem = menu.addItem(withTitle: String(localized: "menu.open"), action: #selector(showMainWindow), keyEquivalent: "")
+        openItem.target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: String(localized: "menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quitItem = menu.addItem(withTitle: String(localized: "menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        quitItem.target = NSApp
 
         statusItem.menu = menu
         logger.notice("setupStatusItem done")
@@ -77,14 +79,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         logger.notice("applicationShouldHandleReopen, hasVisibleWindows=\(flag)")
         if !flag {
-            showMainWindow()
+            showMainWindow(nil)
         }
         return true
     }
 
-    @objc func showMainWindow() {
+    @objc func showMainWindow(_ sender: Any?) {
         logger.notice("showMainWindow called")
-        windowController.showAndActivate()
+        // Status-item menu actions run in menu tracking; defer until next run loop
+        // so the menu closes before activating and presenting the window.
+        DispatchQueue.main.async { [weak self] in
+            self?.windowController.showAndActivate()
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

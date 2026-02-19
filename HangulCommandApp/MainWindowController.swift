@@ -26,7 +26,8 @@ class MainWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func showAndActivate() {
-        NSApp.activate()
+        NSApp.activate(ignoringOtherApps: true)
+        window?.orderFrontRegardless()
         window?.makeKeyAndOrderFront(nil)
         window?.center()
     }
