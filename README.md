@@ -9,7 +9,7 @@ macOS에서 **원하는 키 하나로 한영 전환**을 할 수 있게 해주�
 > [English README](README_EN.md)
 
 <p align="center">
-  <img src="screenshot.png" alt="Hangul Key Changer" width="400">
+  <img src="screenshot_ko.png" alt="Hangul Key Changer" width="400">
 </p>
 
 ## 왜 만들었나요?

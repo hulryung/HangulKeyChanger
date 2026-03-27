@@ -126,6 +126,36 @@
     }
     .github-btn svg { width: 16px; height: 16px; fill: currentColor; }
 
+    .lang-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-toggle:hover {
+      border-color: var(--text-muted);
+    }
+    .lang-toggle-option {
+      padding: 6px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-muted);
+      user-select: none;
+    }
+    .lang-toggle-option.active {
+      background: var(--accent-glow);
+      color: var(--accent-soft);
+    }
+
     /* ── HERO ── */
     .hero {
       position: relative;
@@ -194,14 +224,8 @@
       font-size: clamp(16px, 2.2vw, 20px);
       color: var(--text-secondary);
       line-height: 1.5;
-      margin-bottom: 8px;
-      font-weight: 400;
-    }
-
-    .hero-subtitle-en {
-      font-size: clamp(14px, 1.8vw, 16px);
-      color: var(--text-muted);
       margin-bottom: 40px;
+      font-weight: 400;
     }
 
     .hero-actions {
@@ -548,7 +572,6 @@
     .hero-content .badges { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both; }
     .hero-content .hero-title { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
     .hero-content .hero-subtitle { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s both; }
-    .hero-content .hero-subtitle-en { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
     .hero-content .hero-actions { animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) 0.45s both; }
     .hero-content .screenshot-wrapper { animation: fadeUp 1s cubic-bezier(0.16,1,0.3,1) 0.6s both; }
 
@@ -589,12 +612,16 @@
       <span>Hangul Key Changer</span>
     </div>
     <div class="nav-links">
-      <a href="#features" class="nav-link">Features</a>
-      <a href="#install" class="nav-link">Install</a>
+      <a href="#features" class="nav-link" data-ko="Features" data-en="Features">Features</a>
+      <a href="#install" class="nav-link" data-ko="Install" data-en="Install">Install</a>
       <a href="https://github.com/hulryung/HangulKeyChanger" class="github-btn" target="_blank" rel="noopener">
         <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
         GitHub
       </a>
+      <div class="lang-toggle" id="langToggle">
+        <span class="lang-toggle-option" data-lang="ko">KO</span>
+        <span class="lang-toggle-option" data-lang="en">EN</span>
+      </div>
     </div>
   </nav>
 
@@ -607,12 +634,11 @@
         <span class="badge">MIT License</span>
       </div>
       <h1 class="hero-title">Hangul Key<br>Changer</h1>
-      <p class="hero-subtitle">원하는 키를 한영 전환키로 설정하세요</p>
-      <p class="hero-subtitle-en">Remap any key to toggle Korean/English input on macOS</p>
+      <p class="hero-subtitle" data-ko="원하는 키를 한영 전환키로 설정하세요" data-en="Remap any key to toggle Korean/English input on macOS">원하는 키를 한영 전환키로 설정하세요</p>
       <div class="hero-actions">
         <a href="#install" class="btn btn-primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-          Homebrew로 설치
+          <span data-ko="Homebrew로 설치" data-en="Install via Homebrew">Homebrew로 설치</span>
         </a>
         <a href="https://github.com/hulryung/HangulKeyChanger/releases" class="btn btn-secondary" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -620,7 +646,7 @@
         </a>
       </div>
       <div class="screenshot-wrapper">
-        <img class="screenshot" src="screenshot.png" alt="Hangul Key Changer app window" width="400" height="512">
+        <img class="screenshot" id="heroScreenshot" src="screenshot_ko.png" alt="Hangul Key Changer app window" width="400" height="512">
       </div>
     </div>
   </section>
@@ -630,35 +656,35 @@
   <!-- FEATURES -->
   <section class="features" id="features">
     <p class="section-label reveal">Features</p>
-    <h2 class="section-title reveal reveal-delay-1">간편하고 강력한 한영 전환</h2>
+    <h2 class="section-title reveal reveal-delay-1" data-ko="간편하고 강력한 한영 전환" data-en="Simple yet powerful input switching">간편하고 강력한 한영 전환</h2>
     <div class="features-grid">
       <div class="feature-card reveal reveal-delay-1">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="6" y1="12" x2="6.01" y2="12"/><line x1="18" y1="12" x2="18.01" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
         </div>
-        <h3 class="feature-title">키 리매핑</h3>
-        <p class="feature-desc">오른쪽 커맨드, Caps Lock 등 원하는 키를 한영 전환키로 설정할 수 있습니다.</p>
+        <h3 class="feature-title" data-ko="키 리매핑" data-en="Key Remapping">키 리매핑</h3>
+        <p class="feature-desc" data-ko="오른쪽 커맨드, Caps Lock 등 원하는 키를 한영 전환키로 설정할 수 있습니다." data-en="Remap Right Command, Caps Lock, or any key to toggle Korean/English input.">오른쪽 커맨드, Caps Lock 등 원하는 키를 한영 전환키로 설정할 수 있습니다.</p>
       </div>
       <div class="feature-card reveal reveal-delay-2">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
-        <h3 class="feature-title">원클릭 설정</h3>
-        <p class="feature-desc">활성화 한 번이면 키 매핑과 시스템 단축키가 자동으로 설정됩니다.</p>
+        <h3 class="feature-title" data-ko="원클릭 설정" data-en="One-Click Setup">원클릭 설정</h3>
+        <p class="feature-desc" data-ko="활성화 한 번이면 키 매핑과 시스템 단축키가 자동으로 설정됩니다." data-en="A single click configures both key mapping and system shortcut automatically.">활성화 한 번이면 키 매핑과 시스템 단축키가 자동으로 설정됩니다.</p>
       </div>
       <div class="feature-card reveal reveal-delay-3">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
         </div>
-        <h3 class="feature-title">재부팅 후에도 유지</h3>
-        <p class="feature-desc">로그인 항목으로 등록되어 앱 실행 없이도 계속 작동합니다.</p>
+        <h3 class="feature-title" data-ko="재부팅 후에도 유지" data-en="Persists After Reboot">재부팅 후에도 유지</h3>
+        <p class="feature-desc" data-ko="로그인 항목으로 등록되어 앱 실행 없이도 계속 작동합니다." data-en="Registered as a login item — keeps working without launching the app.">로그인 항목으로 등록되어 앱 실행 없이도 계속 작동합니다.</p>
       </div>
       <div class="feature-card reveal reveal-delay-4">
         <div class="feature-icon">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         </div>
-        <h3 class="feature-title">특별한 권한 불필요</h3>
-        <p class="feature-desc">드라이버, 커널 확장, 접근성 권한, 관리자 비밀번호 모두 필요 없습니다.</p>
+        <h3 class="feature-title" data-ko="특별한 권한 불필요" data-en="No Special Permissions">특별한 권한 불필요</h3>
+        <p class="feature-desc" data-ko="드라이버, 커널 확장, 접근성 권한, 관리자 비밀번호 모두 필요 없습니다." data-en="No drivers, kernel extensions, accessibility permissions, or admin password required.">드라이버, 커널 확장, 접근성 권한, 관리자 비밀번호 모두 필요 없습니다.</p>
       </div>
     </div>
   </section>
@@ -668,7 +694,7 @@
   <!-- INSTALL -->
   <section class="install" id="install">
     <p class="section-label reveal">Install</p>
-    <h2 class="section-title reveal reveal-delay-1">설치</h2>
+    <h2 class="section-title reveal reveal-delay-1" data-ko="설치" data-en="Install">설치</h2>
     <div class="install-grid">
       <div class="install-card reveal reveal-delay-2">
         <h3 class="install-card-title">
@@ -685,7 +711,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Manual Download
         </h3>
-        <p><a href="https://github.com/hulryung/HangulKeyChanger/releases">Releases</a> 페이지에서 최신 <code>.dmg</code> 파일을 다운로드하고, 앱을 <code>/Applications</code> 폴더로 드래그하세요.</p>
+        <p data-ko-html="<a href='https://github.com/hulryung/HangulKeyChanger/releases'>Releases</a> 페이지에서 최신 <code>.dmg</code> 파일을 다운로드하고, 앱을 <code>/Applications</code> 폴더로 드래그하세요." data-en-html="Download the latest <code>.dmg</code> from the <a href='https://github.com/hulryung/HangulKeyChanger/releases'>Releases</a> page, then drag the app to <code>/Applications</code>."><a href="https://github.com/hulryung/HangulKeyChanger/releases">Releases</a> 페이지에서 최신 <code>.dmg</code> 파일을 다운로드하고, 앱을 <code>/Applications</code> 폴더로 드래그하세요.</p>
       </div>
     </div>
   </section>
@@ -694,25 +720,25 @@
 
   <!-- USAGE STEPS -->
   <section class="steps-section">
-    <p class="section-label reveal">How to Use</p>
-    <h2 class="section-title reveal reveal-delay-1">사용법</h2>
+    <p class="section-label reveal" data-ko="How to Use" data-en="How to Use">How to Use</p>
+    <h2 class="section-title reveal reveal-delay-1" data-ko="사용법" data-en="How to Use">사용법</h2>
     <div class="steps reveal reveal-delay-2">
       <div class="step">
         <div class="step-number">1</div>
-        <h3 class="step-title">키 선택</h3>
-        <p class="step-desc">"변경" 버튼을 클릭해<br>전환키를 선택하세요</p>
+        <h3 class="step-title" data-ko="키 선택" data-en="Choose Key">키 선택</h3>
+        <p class="step-desc" data-ko-html="&quot;변경&quot; 버튼을 클릭해<br>전환키를 선택하세요" data-en-html="Click &quot;Change&quot; to select your toggle key">"변경" 버튼을 클릭해<br>전환키를 선택하세요</p>
       </div>
       <div class="step-connector"></div>
       <div class="step">
         <div class="step-number">2</div>
-        <h3 class="step-title">활성화</h3>
-        <p class="step-desc">"활성화"를 클릭하세요<br>비밀번호 입력 없이 바로 적용됩니다</p>
+        <h3 class="step-title" data-ko="활성화" data-en="Enable">활성화</h3>
+        <p class="step-desc" data-ko-html="&quot;활성화&quot;를 클릭하세요<br>비밀번호 입력 없이 바로 적용됩니다" data-en-html="Click &quot;Enable&quot; — no password needed, applied instantly">"활성화"를 클릭하세요<br>비밀번호 입력 없이 바로 적용됩니다</p>
       </div>
       <div class="step-connector"></div>
       <div class="step">
         <div class="step-number">3</div>
-        <h3 class="step-title">완료</h3>
-        <p class="step-desc">선택한 키로<br>한영 전환이 작동합니다</p>
+        <h3 class="step-title" data-ko="완료" data-en="Done">완료</h3>
+        <p class="step-desc" data-ko-html="선택한 키로<br>한영 전환이 작동합니다" data-en-html="Your chosen key now toggles Korean/English input">선택한 키로<br>한영 전환이 작동합니다</p>
       </div>
     </div>
   </section>
@@ -721,9 +747,9 @@
 
   <!-- UNINSTALL NOTE -->
   <section class="install">
-    <p class="section-label reveal">Uninstall</p>
-    <h2 class="section-title reveal reveal-delay-1">제거</h2>
-    <p class="reveal reveal-delay-2" style="font-size:15px; color:var(--text-secondary); line-height:1.7;">
+    <p class="section-label reveal" data-ko="Uninstall" data-en="Uninstall">Uninstall</p>
+    <h2 class="section-title reveal reveal-delay-1" data-ko="제거" data-en="Uninstall">제거</h2>
+    <p class="reveal reveal-delay-2" style="font-size:15px; color:var(--text-secondary); line-height:1.7;" data-ko="앱에서 &quot;비활성화&quot;를 클릭하면 모든 설정이 원래대로 복원됩니다. 이후 앱을 삭제하면 됩니다." data-en="Click &quot;Disable&quot; in the app to restore all settings. Then delete the app.">
       앱에서 "비활성화"를 클릭하면 모든 설정이 원래대로 복원됩니다. 이후 앱을 삭제하면 됩니다.
     </p>
   </section>
@@ -740,32 +766,89 @@
   </footer>
 
   <script>
+    /* ── Language Switching ── */
+    (function() {
+      var STORAGE_KEY = 'hangul-key-changer-lang';
+
+      function getDefaultLang() {
+        var stored = localStorage.getItem(STORAGE_KEY);
+        if (stored === 'ko' || stored === 'en') return stored;
+        var browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+        return browserLang.startsWith('ko') ? 'ko' : 'en';
+      }
+
+      function setLang(lang) {
+        localStorage.setItem(STORAGE_KEY, lang);
+        document.documentElement.lang = lang;
+
+        // Update toggle button
+        var options = document.querySelectorAll('.lang-toggle-option');
+        options.forEach(function(opt) {
+          if (opt.getAttribute('data-lang') === lang) {
+            opt.classList.add('active');
+          } else {
+            opt.classList.remove('active');
+          }
+        });
+
+        // Update elements with data-ko / data-en text attributes
+        var els = document.querySelectorAll('[data-ko][data-en]');
+        els.forEach(function(el) {
+          el.textContent = el.getAttribute('data-' + lang);
+        });
+
+        // Update elements with data-ko-html / data-en-html attributes
+        var htmlEls = document.querySelectorAll('[data-ko-html][data-en-html]');
+        htmlEls.forEach(function(el) {
+          el.innerHTML = el.getAttribute('data-' + lang + '-html');
+        });
+
+        // Update screenshot
+        var screenshot = document.getElementById('heroScreenshot');
+        if (screenshot) {
+          screenshot.src = lang === 'ko' ? 'screenshot_ko.png' : 'screenshot_en.png';
+        }
+      }
+
+      // Initialize
+      var lang = getDefaultLang();
+      setLang(lang);
+
+      // Toggle click handler
+      document.getElementById('langToggle').addEventListener('click', function(e) {
+        var option = e.target.closest('.lang-toggle-option');
+        if (!option) return;
+        var newLang = option.getAttribute('data-lang');
+        if (newLang) setLang(newLang);
+      });
+    })();
+
     /* Scroll reveal */
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('revealed');
           observer.unobserve(entry.target);
         }
       });
     }, { threshold: 0.15 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    document.querySelectorAll('.reveal').forEach(function(el) { observer.observe(el); });
 
     /* Copy to clipboard */
     function copyCommand(btn) {
       navigator.clipboard.writeText('brew install --cask hulryung/tap/hangulkeychanger');
       btn.textContent = '\u2713 Copied';
       btn.classList.add('copied');
-      setTimeout(() => {
+      setTimeout(function() {
         btn.textContent = 'Copy';
         btn.classList.remove('copied');
       }, 2000);
     }
 
     /* Smooth scroll for nav links */
-    document.querySelectorAll('a[href^="#"]').forEach(a => {
-      a.addEventListener('click', e => {
-        const target = document.querySelector(a.getAttribute('href'));
+    document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        var target = document.querySelector(a.getAttribute('href'));
         if (target) {
           e.preventDefault();
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });

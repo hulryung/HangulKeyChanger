@@ -9,7 +9,7 @@ A lightweight macOS utility that lets you toggle Korean/English input with **any
 > [한국어 README](README.md)
 
 <p align="center">
-  <img src="screenshot.png" alt="Hangul Key Changer" width="400">
+  <img src="screenshot_en.png" alt="Hangul Key Changer" width="400">
 </p>
 
 ## Why?
