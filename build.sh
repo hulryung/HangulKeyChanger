@@ -7,9 +7,9 @@
 
 set -euo pipefail
 
-APP_NAME="HangulCommandApp"
+APP_NAME="Hangul Key Changer"
 SCHEME="HangulCommandApp"
-PROJECT="${APP_NAME}.xcodeproj"
+PROJECT="HangulCommandApp.xcodeproj"
 BUILD_DIR="$(pwd)/build"
 ARCHIVE_PATH="${BUILD_DIR}/${APP_NAME}.xcarchive"
 EXPORT_PATH="${BUILD_DIR}/Export"

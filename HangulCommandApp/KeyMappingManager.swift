@@ -1,5 +1,6 @@
 import Cocoa
 import Combine
+import ServiceManagement
 
 // MARK: - Key Info
 
@@ -95,34 +96,6 @@ struct KeyCodeConverter {
     }
 }
 
-// MARK: - Errors
-
-enum KeyMappingError: LocalizedError {
-    case directoryNotWritable
-    case processFailed(Int32)
-    case appleScriptExecutionFailed
-    case permissionDenied
-    case pathValidationFailed
-    case launchAgentNotFound
-
-    var errorDescription: String? {
-        switch self {
-        case .directoryNotWritable:
-            return String(localized: "error.directoryNotWritable")
-        case .processFailed(let code):
-            return String(localized: "error.processFailed \(code)")
-        case .appleScriptExecutionFailed:
-            return String(localized: "error.appleScriptFailed")
-        case .permissionDenied:
-            return String(localized: "error.permissionDenied")
-        case .pathValidationFailed:
-            return String(localized: "error.pathValidation")
-        case .launchAgentNotFound:
-            return String(localized: "error.launchAgentNotFound")
-        }
-    }
-}
-
 // MARK: - Key Mapping Manager
 
 @MainActor
@@ -136,18 +109,10 @@ class KeyMappingManager: ObservableObject {
     @Published var capturedKeyInfo: KeyInfo?
 
     private var keyMonitor: Any?
-    private let launchAgentLabel = "com.hangulcommand.userkeymapping"
-
-    private var launchAgentPlistPath: String {
-        "/Library/LaunchAgents/\(launchAgentLabel).plist"
-    }
-
-    private var scriptPath: String {
-        getSecureScriptPath()
-    }
 
     private init() {
         sourceKeyInfo = Self.loadSourceKey()
+        cleanupLegacyLaunchAgent()
         Task { await checkCurrentStatus() }
     }
 
@@ -187,14 +152,12 @@ class KeyMappingManager: ObservableObject {
                 Task { @MainActor [weak self] in
                     guard let self, self.capturedKeyInfo == nil else { return }
                     self.capturedKeyInfo = keyInfo
-                    // Stop monitoring but keep mapping suspended until user confirms
                     if let monitor = self.keyMonitor {
                         NSEvent.removeMonitor(monitor)
                         self.keyMonitor = nil
                     }
                 }
             }
-            // Return nil to consume ALL events — prevents beeps and stray text
             return nil
         }
     }
@@ -207,46 +170,133 @@ class KeyMappingManager: ObservableObject {
 
         // Restore hidutil mapping if it was enabled
         if isMappingEnabled {
-            let srcHex = sourceKeyInfo.fullHIDHex
-            let arg = "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":\(srcHex),\"HIDKeyboardModifierMappingDst\":0x70000006d}]}"
-            _ = try? executeProcess("/usr/bin/hidutil", arguments: ["property", "--set", arg])
+            applyHidutil()
         }
     }
 
-    // MARK: - Path & Security
+    // MARK: - Mapping Operations
 
-    private func getSecureScriptPath() -> String {
-        let systemPath = "/Users/Shared/bin/hangulkeymapping"
-        let tempPath = FileManager.default.temporaryDirectory.appendingPathComponent("hangulkeymapping").path
+    func applyHidutil() {
+        let srcHex = sourceKeyInfo.fullHIDHex
+        let arg = "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":\(srcHex),\"HIDKeyboardModifierMappingDst\":0x70000006d}]}"
+        _ = try? executeProcess("/usr/bin/hidutil", arguments: ["property", "--set", arg])
+    }
 
-        if FileManager.default.isWritableFile(atPath: "/Users/Shared") {
-            return systemPath
-        } else {
-            return tempPath
+    func checkCurrentStatus() async {
+        isLoading = true
+        errorMessage = nil
+
+        let savedEnabled = UserDefaults.standard.bool(forKey: "mappingEnabled")
+
+        var hidutilActive = false
+        if let data = try? executeProcess("/usr/bin/hidutil", arguments: ["property", "--get", "UserKeyMapping"]),
+           let output = String(data: data, encoding: .utf8) {
+            hidutilActive = output.contains("HIDKeyboardModifierMappingSrc")
+        }
+
+        isMappingEnabled = savedEnabled && hidutilActive
+        isLoading = false
+    }
+
+    func enableMapping() async -> Bool {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            // Apply hidutil immediately
+            applyHidutil()
+
+            // Set F18 as input source shortcut
+            setF18AsInputSourceShortcut()
+
+            // Register as login item
+            try SMAppService.mainApp.register()
+
+            // Save state
+            UserDefaults.standard.set(true, forKey: "mappingEnabled")
+
+            await checkCurrentStatus()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
+            return false
         }
     }
 
-    private func validatePath(_ path: String) throws {
-        let url = URL(fileURLWithPath: path)
-        let parentURL = url.deletingLastPathComponent()
-        guard FileManager.default.fileExists(atPath: parentURL.path) else {
-            throw KeyMappingError.pathValidationFailed
-        }
-        guard FileManager.default.isWritableFile(atPath: parentURL.path) else {
-            throw KeyMappingError.directoryNotWritable
-        }
-        let pathComponents = path.components(separatedBy: "/")
-        guard !pathComponents.contains("..") && !pathComponents.contains("~") else {
-            throw KeyMappingError.pathValidationFailed
+    func disableMapping() async -> Bool {
+        isLoading = true
+        errorMessage = nil
+
+        // Clear hidutil mapping
+        _ = try? executeProcess("/usr/bin/hidutil", arguments: [
+            "property", "--set",
+            "{\"UserKeyMapping\":[]}"
+        ])
+
+        // Restore default input source shortcut
+        restoreDefaultInputSourceShortcut()
+
+        // Unregister login item
+        try? await SMAppService.mainApp.unregister()
+
+        // Clear state
+        UserDefaults.standard.set(false, forKey: "mappingEnabled")
+
+        isMappingEnabled = false
+        isLoading = false
+        return true
+    }
+
+    // MARK: - Input Source Shortcut
+
+    private func setF18AsInputSourceShortcut() {
+        _ = try? executeProcess("/usr/bin/defaults", arguments: [
+            "write", "com.apple.symbolichotkeys",
+            "AppleSymbolicHotKeys", "-dict-add", "60",
+            "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
+        ])
+        _ = try? executeProcess(
+            "/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings",
+            arguments: ["-u"]
+        )
+    }
+
+    private func restoreDefaultInputSourceShortcut() {
+        _ = try? executeProcess("/usr/bin/defaults", arguments: [
+            "write", "com.apple.symbolichotkeys",
+            "AppleSymbolicHotKeys", "-dict-add", "60",
+            "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>262144</integer></array><key>type</key><string>standard</string></dict></dict>"
+        ])
+        _ = try? executeProcess(
+            "/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings",
+            arguments: ["-u"]
+        )
+    }
+
+    // MARK: - Legacy Cleanup
+
+    /// Remove old LaunchAgent files from previous versions
+    private nonisolated func cleanupLegacyLaunchAgent() {
+        let plistPath = "/Library/LaunchAgents/com.hangulcommand.userkeymapping.plist"
+        let scriptPath = "/Users/Shared/bin/hangulkeymapping"
+        if FileManager.default.fileExists(atPath: plistPath) || FileManager.default.fileExists(atPath: scriptPath) {
+            let script = """
+            do shell script "
+                launchctl remove 'com.hangulcommand.userkeymapping' 2>/dev/null || true;
+                rm -f '\(plistPath)' 2>/dev/null || true;
+                rm -f '\(scriptPath)' 2>/dev/null || true;
+            " with administrator privileges
+            """
+            DispatchQueue.global(qos: .utility).async {
+                let appleScript = NSAppleScript(source: script)
+                var errorDict: NSDictionary?
+                appleScript?.executeAndReturnError(&errorDict)
+            }
         }
     }
 
-    private func createSecureDirectory(at path: String) throws {
-        let url = URL(fileURLWithPath: path)
-        try validatePath(path)
-        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-    }
+    // MARK: - Helpers
 
     func executeProcess(_ launchPath: String, arguments: [String]) throws -> Data {
         let process = Process()
@@ -269,222 +319,11 @@ class KeyMappingManager: ObservableObject {
             process.waitUntilExit()
             if process.terminationStatus != 0 {
                 _ = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                throw KeyMappingError.processFailed(process.terminationStatus)
+                throw NSError(domain: "KeyMapping", code: Int(process.terminationStatus))
             }
             return pipe.fileHandleForReading.readDataToEndOfFile()
         } catch {
-            throw KeyMappingError.processFailed(-1)
+            throw error
         }
-    }
-
-    // MARK: - Mapping Operations
-
-    func checkCurrentStatus() async {
-        isLoading = true
-        errorMessage = nil
-
-        let plistExists = FileManager.default.fileExists(atPath: launchAgentPlistPath)
-        let scriptExists = FileManager.default.fileExists(atPath: scriptPath)
-
-        // Check actual hidutil state to confirm mapping is active
-        var hidutilActive = false
-        if let data = try? executeProcess("/usr/bin/hidutil", arguments: ["property", "--get", "UserKeyMapping"]),
-           let output = String(data: data, encoding: .utf8) {
-            hidutilActive = output.contains("HIDKeyboardModifierMappingSrc")
-        }
-
-        // Both conditions: files exist for persistence AND hidutil is active now
-        isMappingEnabled = (plistExists && scriptExists) && hidutilActive
-        isLoading = false
-    }
-
-    func enableMapping() async -> Bool {
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            let directory = URL(fileURLWithPath: scriptPath).deletingLastPathComponent().path
-            try createSecureDirectory(at: directory)
-
-            let srcHex = sourceKeyInfo.fullHIDHex
-            let scriptContent = """
-            #!/bin/sh
-            # \(sourceKeyInfo.displayName) -> F18
-            # Set F18 as input source shortcut in System Settings > Keyboard > Keyboard Shortcuts > Input Sources
-            hidutil property --set '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":\(srcHex),"HIDKeyboardModifierMappingDst":0x70000006d}]}'
-            """
-
-            try scriptContent.write(toFile: scriptPath, atomically: true, encoding: .utf8)
-            _ = try executeProcess("/bin/chmod", arguments: ["755", scriptPath])
-
-            // Apply immediately
-            let hidutilArg = "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":\(srcHex),\"HIDKeyboardModifierMappingDst\":0x70000006d}]}"
-            _ = try executeProcess("/usr/bin/hidutil", arguments: ["property", "--set", hidutilArg])
-
-            let plistContent = generateLaunchAgentPlist()
-            let tempPlistPath = FileManager.default.temporaryDirectory.appendingPathComponent("com.hangulcommand.userkeymapping.plist").path
-            try plistContent.write(toFile: tempPlistPath, atomically: true, encoding: .utf8)
-
-            let success = await executeSecureAppleScript(
-                createScript: tempPlistPath,
-                targetPath: launchAgentPlistPath
-            )
-            try? FileManager.default.removeItem(atPath: tempPlistPath)
-
-            if success {
-                setF18AsInputSourceShortcut()
-                await checkCurrentStatus()
-                return true
-            } else {
-                errorMessage = String(localized: "error.launchAgent")
-                isLoading = false
-                return false
-            }
-        } catch {
-            errorMessage = error.localizedDescription
-            isLoading = false
-            return false
-        }
-    }
-
-    func disableMapping() async -> Bool {
-        isLoading = true
-        errorMessage = nil
-
-        // Clear hidutil mapping (no admin needed, this is the critical operation)
-        _ = try? executeProcess("/usr/bin/hidutil", arguments: [
-            "property", "--set",
-            "{\"UserKeyMapping\":[]}"
-        ])
-
-        // Restore default input source shortcut (no admin needed)
-        restoreDefaultInputSourceShortcut()
-
-        // Remove LaunchAgent files (best-effort, requires admin)
-        // Even if this fails, the mapping is already cleared for this session
-        let cleanupSuccess = await executeSecureAppleScript(
-            remove: launchAgentLabel,
-            plistPath: launchAgentPlistPath,
-            scriptPath: scriptPath
-        )
-
-        isMappingEnabled = false
-        isLoading = false
-        if !cleanupSuccess {
-            // Files may remain but mapping is cleared for this session
-            // On next reboot, the mapping may re-activate from LaunchAgent
-            print("LaunchAgent cleanup failed, files may remain")
-        }
-        return true
-    }
-
-    // MARK: - Input Source Shortcut
-
-    /// Set F18 as the "Select previous input source" shortcut (hotkey 60)
-    /// parameters: (65535=no char, 79=F18 keycode, 8388608=fn flag)
-    private func setF18AsInputSourceShortcut() {
-        _ = try? executeProcess("/usr/bin/defaults", arguments: [
-            "write", "com.apple.symbolichotkeys",
-            "AppleSymbolicHotKeys", "-dict-add", "60",
-            "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>65535</integer><integer>79</integer><integer>8388608</integer></array><key>type</key><string>standard</string></dict></dict>"
-        ])
-        _ = try? executeProcess(
-            "/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings",
-            arguments: ["-u"]
-        )
-    }
-
-    /// Restore default shortcut: Control+Space
-    /// parameters: (32=space char, 49=space keycode, 262144=ctrl flag)
-    private func restoreDefaultInputSourceShortcut() {
-        _ = try? executeProcess("/usr/bin/defaults", arguments: [
-            "write", "com.apple.symbolichotkeys",
-            "AppleSymbolicHotKeys", "-dict-add", "60",
-            "<dict><key>enabled</key><true/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>262144</integer></array><key>type</key><string>standard</string></dict></dict>"
-        ])
-        _ = try? executeProcess(
-            "/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings",
-            arguments: ["-u"]
-        )
-    }
-
-    // MARK: - Helpers
-
-    private func generateLaunchAgentPlist() -> String {
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>Label</key>
-            <string>\(launchAgentLabel)</string>
-            <key>ProgramArguments</key>
-            <array>
-                <string>\(scriptPath)</string>
-            </array>
-            <key>RunAtLoad</key>
-            <true/>
-            <key>KeepAlive</key>
-            <false/>
-        </dict>
-        </plist>
-        """
-    }
-
-    private func executeSecureAppleScript(createScript: String? = nil, targetPath: String? = nil, remove: String? = nil, plistPath: String? = nil, scriptPath: String? = nil) async -> Bool {
-        var scriptContent = ""
-
-        if let create = createScript, let target = targetPath {
-            let escapedCreate = create.replacingOccurrences(of: "'", with: "'\\''")
-            let escapedTarget = target.replacingOccurrences(of: "'", with: "'\\''")
-            scriptContent = """
-            do shell script "
-                mkdir -p '\(URL(fileURLWithPath: escapedTarget).deletingLastPathComponent().path)' 2>/dev/null || exit 1;
-                mv '\(escapedCreate)' '\(escapedTarget)' 2>/dev/null || exit 2;
-                chown root:admin '\(escapedTarget)' 2>/dev/null || exit 3;
-                chmod 644 '\(escapedTarget)' 2>/dev/null || exit 4;
-                launchctl load '\(escapedTarget)' 2>/dev/null || exit 5;
-                echo 'SUCCESS'
-            " with administrator privileges
-            """
-        } else if let remove = remove, let plist = plistPath, let script = scriptPath {
-            let escapedRemove = remove.replacingOccurrences(of: "'", with: "'\\''")
-            let escapedPlist = plist.replacingOccurrences(of: "'", with: "'\\''")
-            let escapedScript = script.replacingOccurrences(of: "'", with: "'\\''")
-            scriptContent = """
-            do shell script "
-                launchctl remove '\(escapedRemove)' 2>/dev/null || true;
-                rm -f '\(escapedPlist)' 2>/dev/null || true;
-                rm -f '\(escapedScript)' 2>/dev/null || true;
-                hidutil property --set '{\"UserKeyMapping\":[]}' 2>/dev/null || true;
-                echo 'SUCCESS'
-            " with administrator privileges
-            """
-        }
-
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                let appleScript = NSAppleScript(source: scriptContent)
-                var errorDict: NSDictionary?
-                let result = appleScript?.executeAndReturnError(&errorDict)
-
-                if let error = errorDict {
-                    print("AppleScript error: \(error)")
-                    DispatchQueue.main.async { continuation.resume(returning: false) }
-                    return
-                }
-
-                if let resultString = result?.stringValue, resultString.contains("SUCCESS") {
-                    DispatchQueue.main.async { continuation.resume(returning: true) }
-                } else {
-                    DispatchQueue.main.async { continuation.resume(returning: false) }
-                }
-            }
-        }
-    }
-
-    func openSystemPreferences() {
-        let url = URL(string: "x-apple.systempreferences:com.apple.preference.keyboard?InputSources")!
-        NSWorkspace.shared.open(url)
     }
 }
