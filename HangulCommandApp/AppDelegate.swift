@@ -38,11 +38,73 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
+        // Setup menu bar
+        setupMainMenu()
+
         // Normal launch - show window
         windowController = MainWindowController(viewController: MainViewController())
         windowController.showAndActivate()
 
         logger.notice("applicationDidFinishLaunching done")
+    }
+
+    // MARK: - Menu Bar
+
+    private func setupMainMenu() {
+        let mainMenu = NSMenu()
+
+        // App menu
+        let appMenuItem = NSMenuItem()
+        let appMenu = NSMenu()
+        appMenu.addItem(withTitle: "About Hangul Key Changer", action: #selector(showAbout), keyEquivalent: "")
+        appMenu.addItem(.separator())
+        appMenu.addItem(withTitle: "Quit Hangul Key Changer", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenuItem.submenu = appMenu
+        mainMenu.addItem(appMenuItem)
+
+        NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func showAbout() {
+        let credits = NSMutableAttributedString()
+
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.paragraphSpacing = 8
+
+        let normalAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11),
+            .foregroundColor: NSColor.labelColor,
+            .paragraphStyle: paragraphStyle,
+        ]
+
+        let linkAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11),
+            .paragraphStyle: paragraphStyle,
+        ]
+
+        credits.append(NSAttributedString(string: "저는 여전히 3벌식을 사랑합니다.\n\n", attributes: normalAttrs))
+
+        let website = NSMutableAttributedString(string: "Website", attributes: linkAttrs)
+        website.addAttribute(.link, value: "https://hkc.hulryung.com", range: NSRange(location: 0, length: website.length))
+
+        let github = NSMutableAttributedString(string: "GitHub", attributes: linkAttrs)
+        github.addAttribute(.link, value: "https://github.com/hulryung/HangulKeyChanger", range: NSRange(location: 0, length: github.length))
+
+        let x = NSMutableAttributedString(string: "X (Twitter)", attributes: linkAttrs)
+        x.addAttribute(.link, value: "https://x.com/hulryung", range: NSRange(location: 0, length: x.length))
+
+        let separator = NSAttributedString(string: "  ·  ", attributes: normalAttrs)
+
+        credits.append(website)
+        credits.append(separator)
+        credits.append(github)
+        credits.append(separator)
+        credits.append(x)
+
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .credits: credits,
+        ])
     }
 
     // MARK: - App Lifecycle

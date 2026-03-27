@@ -56,6 +56,7 @@ class MainViewController: NSViewController {
     private var instructionStep2Label: NSTextField!
     private var instructionNoteLabel: NSTextField!
     private var langSegment: NSSegmentedControl!
+    private var loveLabel: NSTextField!
 
     override func loadView() {
         view = NSView()
@@ -84,6 +85,23 @@ class MainViewController: NSViewController {
         instructionStep1Label.stringValue = L("instructions.step1")
         instructionStep2Label.stringValue = L("instructions.step2")
         instructionNoteLabel.stringValue = L("instructions.note")
+
+        // Update love message
+        let loveText = NSMutableAttributedString()
+        let textAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.tertiaryLabelColor,
+        ]
+        let heartAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.systemRed,
+        ]
+        let loveMsg = lang.language == "ko" ? "한글을 사랑합니다" : "We love Hangul"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        loveText.append(NSAttributedString(string: loveMsg + " ", attributes: textAttrs))
+        loveText.append(NSAttributedString(string: "♥", attributes: heartAttrs))
+        loveText.append(NSAttributedString(string: "  v\(version)", attributes: textAttrs))
+        loveLabel.attributedStringValue = loveText
 
         // Re-apply state-dependent labels
         updateToggleUI(enabled: manager.isMappingEnabled)
@@ -143,11 +161,11 @@ class MainViewController: NSViewController {
         errorLabel.isHidden = true
         mainStack.addArrangedSubview(errorLabel)
 
-        // 6. Divider + Donate
+        // 6. Divider + Footer (version + links)
         mainStack.addArrangedSubview(makeDivider())
-        let donateButton = buildDonateButton()
-        mainStack.addArrangedSubview(donateButton)
-        donateButton.widthAnchor.constraint(equalTo: mainStack.widthAnchor, constant: -40).isActive = true
+        let footer = buildFooter()
+        mainStack.addArrangedSubview(footer)
+        footer.widthAnchor.constraint(equalTo: mainStack.widthAnchor, constant: -40).isActive = true
     }
 
     // MARK: - Header
@@ -348,18 +366,160 @@ class MainViewController: NSViewController {
         return row
     }
 
-    // MARK: - Donate Button
+    // MARK: - Footer
 
-    private func buildDonateButton() -> NSView {
-        let button = NSButton(title: "☕ Buy me a coffee", target: self, action: #selector(donateTapped))
-        button.bezelStyle = .rounded
-        button.controlSize = .regular
-        button.font = NSFont.systemFont(ofSize: 12, weight: .medium)
+    private func buildFooter() -> NSView {
+        let stack = NSStackView()
+        stack.orientation = .horizontal
+        stack.alignment = .centerY
+        stack.distribution = .fill
+        stack.spacing = 8
+
+        stack.addArrangedSubview(makeLinkButton(symbolName: "globe.asia.australia", url: "https://hkc.hulryung.com", tooltip: "Website"))
+        stack.addArrangedSubview(makeLinkButton(image: Self.githubIcon(), url: "https://github.com/hulryung/HangulKeyChanger", tooltip: "GitHub"))
+        stack.addArrangedSubview(makeLinkButton(image: Self.xIcon(), url: "https://x.com/hulryung", tooltip: "X"))
+
+        // Flexible spacer
+        let spacer = NSView()
+        spacer.setContentHuggingPriority(.init(1), for: .horizontal)
+        stack.addArrangedSubview(spacer)
+
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let loveText = NSMutableAttributedString()
+        let textAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.tertiaryLabelColor,
+        ]
+        let heartAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 10),
+            .foregroundColor: NSColor.systemRed,
+        ]
+        let loveMsg = lang.language == "ko" ? "한글을 사랑합니다" : "We love Hangul"
+        loveText.append(NSAttributedString(string: loveMsg + " ", attributes: textAttrs))
+        loveText.append(NSAttributedString(string: "♥", attributes: heartAttrs))
+        loveText.append(NSAttributedString(string: "  v\(version)", attributes: textAttrs))
+
+        let loveLabel = NSTextField(labelWithAttributedString: loveText)
+        loveLabel.setContentHuggingPriority(.required, for: .horizontal)
+        self.loveLabel = loveLabel
+
+        stack.addArrangedSubview(loveLabel)
+
+        return stack
+    }
+
+    private func makeLinkButton(symbolName: String? = nil, image: NSImage? = nil, url: String, tooltip: String) -> NSButton {
+        let button = NSButton(frame: .zero)
+        button.bezelStyle = .inline
+        button.isBordered = false
+        button.toolTip = tooltip
+        button.target = self
+        button.action = #selector(linkButtonTapped(_:))
+        button.identifier = NSUserInterfaceItemIdentifier(url)
+
+        if let symbolName {
+            button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: tooltip)
+            button.contentTintColor = .secondaryLabelColor
+        } else if let image {
+            button.image = image
+        }
+
+        button.imageScaling = .scaleProportionallyDown
+        button.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        button.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        button.setContentHuggingPriority(.required, for: .horizontal)
+
         return button
     }
 
-    @objc private func donateTapped() {
-        if let url = URL(string: "https://buymeacoffee.com/hulryung") {
+    /// GitHub mark (official SVG path scaled to 16x16, flipped for AppKit)
+    private static func githubIcon() -> NSImage {
+        let size = NSSize(width: 16, height: 16)
+        return NSImage(size: size, flipped: true) { rect in
+            NSColor.secondaryLabelColor.setFill()
+            let scale: CGFloat = 16.0 / 98.0
+            let path = NSBezierPath()
+            // GitHub official Invertocat path (viewBox 0 0 98 96)
+            let cgPath = CGMutablePath()
+            cgPath.move(to: CGPoint(x: 48.854, y: 0))
+            cgPath.addCurve(to: CGPoint(x: 0, y: 49.217), control1: CGPoint(x: 21.839, y: 0), control2: CGPoint(x: 0, y: 22.000))
+            cgPath.addCurve(to: CGPoint(x: 33.417, y: 95.528), control1: CGPoint(x: 0, y: 71.026), control2: CGPoint(x: 13.114, y: 89.836))
+            cgPath.addCurve(to: CGPoint(x: 36.751, y: 91.929), control1: CGPoint(x: 35.937, y: 95.996), control2: CGPoint(x: 36.751, y: 94.592))
+            cgPath.addLine(to: CGPoint(x: 36.751, y: 84.349))
+            cgPath.addCurve(to: CGPoint(x: 6.025, y: 73.451), control1: CGPoint(x: 23.109, y: 87.009), control2: CGPoint(x: 6.025, y: 73.451))
+            cgPath.addCurve(to: CGPoint(x: 1.244, y: 61.078), control1: CGPoint(x: 4.563, y: 68.074), control2: CGPoint(x: 1.244, y: 61.078))
+            cgPath.addCurve(to: CGPoint(x: 10.006, y: 59.903), control1: CGPoint(x: 1.244, y: 61.078), control2: CGPoint(x: 6.556, y: 57.852))
+            cgPath.addCurve(to: CGPoint(x: 16.320, y: 72.276), control1: CGPoint(x: 13.456, y: 61.954), control2: CGPoint(x: 16.320, y: 72.276))
+            cgPath.addCurve(to: CGPoint(x: 39.495, y: 75.820), control1: CGPoint(x: 21.830, y: 82.869), control2: CGPoint(x: 34.516, y: 79.420))
+            cgPath.addCurve(to: CGPoint(x: 41.409, y: 68.664), control1: CGPoint(x: 39.964, y: 72.922), control2: CGPoint(x: 40.598, y: 70.534))
+            cgPath.addCurve(to: CGPoint(x: 18.355, y: 45.617), control1: CGPoint(x: 28.298, y: 67.137), control2: CGPoint(x: 18.355, y: 63.150))
+            cgPath.addCurve(to: CGPoint(x: 24.668, y: 31.886), control1: CGPoint(x: 18.355, y: 39.651), control2: CGPoint(x: 20.627, y: 35.501))
+            cgPath.addCurve(to: CGPoint(x: 25.199, y: 17.567), control1: CGPoint(x: 23.737, y: 29.562), control2: CGPoint(x: 23.988, y: 23.533))
+            cgPath.addCurve(to: CGPoint(x: 36.220, y: 21.767), control1: CGPoint(x: 25.199, y: 17.567), control2: CGPoint(x: 29.211, y: 18.636))
+            cgPath.addCurve(to: CGPoint(x: 48.854, y: 20.003), control1: CGPoint(x: 39.670, y: 20.828), control2: CGPoint(x: 44.223, y: 20.003))
+            cgPath.addCurve(to: CGPoint(x: 61.489, y: 21.767), control1: CGPoint(x: 53.486, y: 20.003), control2: CGPoint(x: 58.039, y: 20.828))
+            cgPath.addCurve(to: CGPoint(x: 72.510, y: 17.567), control1: CGPoint(x: 68.498, y: 18.636), control2: CGPoint(x: 72.510, y: 17.567))
+            cgPath.addCurve(to: CGPoint(x: 73.041, y: 31.886), control1: CGPoint(x: 73.721, y: 23.533), control2: CGPoint(x: 73.972, y: 29.562))
+            cgPath.addCurve(to: CGPoint(x: 79.354, y: 45.617), control1: CGPoint(x: 77.082, y: 35.501), control2: CGPoint(x: 79.354, y: 39.651))
+            cgPath.addCurve(to: CGPoint(x: 56.300, y: 68.664), control1: CGPoint(x: 79.354, y: 63.150), control2: CGPoint(x: 69.411, y: 67.137))
+            cgPath.addCurve(to: CGPoint(x: 58.503, y: 77.530), control1: CGPoint(x: 57.642, y: 70.876), control2: CGPoint(x: 58.503, y: 73.451))
+            cgPath.addLine(to: CGPoint(x: 58.503, y: 91.929))
+            cgPath.addCurve(to: CGPoint(x: 61.837, y: 95.528), control1: CGPoint(x: 58.503, y: 94.592), control2: CGPoint(x: 59.787, y: 95.996))
+            cgPath.addCurve(to: CGPoint(x: 97.709, y: 49.217), control1: CGPoint(x: 84.595, y: 89.836), control2: CGPoint(x: 97.709, y: 71.026))
+            cgPath.addCurve(to: CGPoint(x: 48.854, y: 0), control1: CGPoint(x: 97.709, y: 22.000), control2: CGPoint(x: 75.870, y: 0))
+            cgPath.closeSubpath()
+
+            let transform = CGAffineTransform(scaleX: scale, y: scale)
+            if let scaled = cgPath.copy(using: [transform]) {
+                path.append(NSBezierPath(cgPath: scaled))
+            }
+            path.fill()
+            return true
+        }
+    }
+
+    /// X (Twitter) official logo (viewBox 0 0 1200 1227, scaled to 16x16)
+    private static func xIcon() -> NSImage {
+        let size = NSSize(width: 16, height: 16)
+        return NSImage(size: size, flipped: true) { rect in
+            NSColor.secondaryLabelColor.setFill()
+            let scale: CGFloat = 14.0 / 1227.0
+            let offset: CGFloat = 1.0 // center in 16x16
+            let cgPath = CGMutablePath()
+            // Outer X shape
+            cgPath.move(to: CGPoint(x: 714.163, y: 519.284))
+            cgPath.addLine(to: CGPoint(x: 1160.89, y: 0))
+            cgPath.addLine(to: CGPoint(x: 1055.03, y: 0))
+            cgPath.addLine(to: CGPoint(x: 671.869, y: 450.887))
+            cgPath.addLine(to: CGPoint(x: 357.328, y: 0))
+            cgPath.addLine(to: CGPoint(x: 0, y: 0))
+            cgPath.addLine(to: CGPoint(x: 468.492, y: 681.821))
+            cgPath.addLine(to: CGPoint(x: 0, y: 1226.37))
+            cgPath.addLine(to: CGPoint(x: 105.866, y: 1226.37))
+            cgPath.addLine(to: CGPoint(x: 510.788, y: 750.218))
+            cgPath.addLine(to: CGPoint(x: 842.672, y: 1226.37))
+            cgPath.addLine(to: CGPoint(x: 1200, y: 1226.37))
+            cgPath.closeSubpath()
+            // Inner cutout
+            cgPath.move(to: CGPoint(x: 167.0, y: 79.6348))
+            cgPath.addLine(to: CGPoint(x: 306.0, y: 79.6348))
+            cgPath.addLine(to: CGPoint(x: 1033.0, y: 1146.74))
+            cgPath.addLine(to: CGPoint(x: 894.0, y: 1146.74))
+            cgPath.closeSubpath()
+
+            var transform = CGAffineTransform(scaleX: scale, y: scale)
+            transform = transform.translatedBy(x: offset / scale, y: offset / scale)
+            if let scaled = cgPath.copy(using: &transform) {
+                let nsPath = NSBezierPath(cgPath: scaled)
+                nsPath.windingRule = .evenOdd
+                nsPath.fill()
+            }
+            return true
+        }
+    }
+
+    @objc private func linkButtonTapped(_ sender: NSButton) {
+        if let urlString = sender.identifier?.rawValue, let url = URL(string: urlString) {
             NSWorkspace.shared.open(url)
         }
     }
