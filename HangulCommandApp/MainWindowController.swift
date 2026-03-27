@@ -9,7 +9,7 @@ class MainWindowController: NSWindowController, NSWindowDelegate {
         let window = NSWindow(contentViewController: viewController)
         window.title = "Hangul Key Changer"
         window.styleMask = [.titled, .closable, .miniaturizable]
-        window.setContentSize(NSSize(width: 340, height: 10))
+        window.setContentSize(NSSize(width: 380, height: 10))
         window.center()
         window.isReleasedWhenClosed = false
         window.standardWindowButton(.zoomButton)?.isEnabled = false
@@ -21,8 +21,7 @@ class MainWindowController: NSWindowController, NSWindowDelegate {
     required init?(coder: NSCoder) { fatalError() }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        sender.orderOut(nil)
-        return false
+        return true
     }
 
     func showAndActivate() {
@@ -77,7 +76,7 @@ class MainViewController: NSViewController {
             mainStack.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             mainStack.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             mainStack.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            mainStack.widthAnchor.constraint(equalToConstant: 340),
+            mainStack.widthAnchor.constraint(equalToConstant: 380),
         ])
 
         // 1. Header
@@ -168,6 +167,8 @@ class MainViewController: NSViewController {
 
         keyLabel = makeLabel(manager.sourceKeyInfo.displayName, size: 13, weight: .medium)
         keyLabel.alignment = .right
+        keyLabel.lineBreakMode = .byTruncatingTail
+        keyLabel.maximumNumberOfLines = 1
         keyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         changeKeyButton = NSButton(title: String(localized: "button.change"), target: self, action: #selector(changeKeyTapped))
@@ -265,18 +266,11 @@ class MainViewController: NSViewController {
     private func makeInstructionRow(number: Int, text: String) -> NSView {
         let row = NSStackView()
         row.orientation = .horizontal
-        row.alignment = .top
+        row.alignment = .centerY
         row.spacing = 8
 
         // Number badge
-        let badge = NSTextField(labelWithString: "\(number)")
-        badge.font = NSFont.systemFont(ofSize: 9, weight: .bold)
-        badge.textColor = .white
-        badge.alignment = .center
-        badge.wantsLayer = true
-        badge.layer?.backgroundColor = NSColor.controlAccentColor.cgColor
-        badge.layer?.cornerRadius = 8
-        badge.layer?.masksToBounds = true
+        let badge = BadgeView(number: number)
         badge.widthAnchor.constraint(equalToConstant: 16).isActive = true
         badge.heightAnchor.constraint(equalToConstant: 16).isActive = true
         badge.setContentHuggingPriority(.required, for: .horizontal)
@@ -609,5 +603,34 @@ class KeyCaptureSheetViewController: NSViewController {
         }
         manager.stopKeyCapture()
         view.window?.sheetParent?.endSheet(panel)
+    }
+}
+
+// MARK: - BadgeView
+
+private class BadgeView: NSView {
+    private let number: Int
+
+    init(number: Int) {
+        self.number = number
+        super.init(frame: .zero)
+        translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor.controlAccentColor.setFill()
+        let path = NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2)
+        path.fill()
+
+        let text = "\(number)" as NSString
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 9, weight: .bold),
+            .foregroundColor: NSColor.white,
+        ]
+        let size = text.size(withAttributes: attrs)
+        let point = NSPoint(x: (bounds.width - size.width) / 2, y: (bounds.height - size.height) / 2)
+        text.draw(at: point, withAttributes: attrs)
     }
 }

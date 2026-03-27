@@ -1,5 +1,4 @@
 import Cocoa
-import Combine
 import os
 
 private let logger = Logger(subsystem: "com.hangulcommand.app", category: "AppDelegate")
@@ -7,10 +6,7 @@ private let logger = Logger(subsystem: "com.hangulcommand.app", category: "AppDe
 @main
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private(set) var statusItem: NSStatusItem!
     private(set) var windowController: MainWindowController!
-    private var cancellable: AnyCancellable?
-    private var statusMenuItem: NSMenuItem!
 
     nonisolated static func main() {
         let app = NSApplication.shared
@@ -21,80 +17,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         logger.notice("applicationDidFinishLaunching started")
-        NSApp.setActivationPolicy(.accessory)
 
         windowController = MainWindowController(viewController: MainViewController())
-        setupStatusItem()
-
-        let event = NSAppleEventManager.shared().currentAppleEvent
-        let isLoginLaunch = event?.paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
-
-        logger.notice("isLoginLaunch=\(isLoginLaunch)")
-
-        if isLoginLaunch {
-            logger.notice("Hiding main window (login item launch)")
-        } else {
-            logger.notice("Manual launch - showing main window")
-            windowController.showAndActivate()
-        }
+        windowController.showAndActivate()
 
         logger.notice("applicationDidFinishLaunching done")
-    }
-
-    // MARK: - Status Item
-
-    private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: "Hangul Key Changer")
-
-        let menu = NSMenu()
-        statusMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        statusMenuItem.isEnabled = false
-
-        menu.addItem(.separator())
-        let openItem = menu.addItem(withTitle: String(localized: "menu.open"), action: #selector(showMainWindow), keyEquivalent: "")
-        openItem.target = self
-        menu.addItem(.separator())
-        let quitItem = menu.addItem(withTitle: String(localized: "menu.quit"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        quitItem.target = NSApp
-
-        statusItem.menu = menu
-        logger.notice("setupStatusItem done")
-
-        let manager = KeyMappingManager.shared
-        updateStatusTitle(enabled: manager.isMappingEnabled)
-        cancellable = manager.$isMappingEnabled
-            .receive(on: RunLoop.main)
-            .sink { [weak self] enabled in
-                self?.updateStatusTitle(enabled: enabled)
-            }
-    }
-
-    private func updateStatusTitle(enabled: Bool) {
-        statusMenuItem.title = enabled ? String(localized: "menu.status.enabled") : String(localized: "menu.status.disabled")
     }
 
     // MARK: - App Lifecycle
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        logger.notice("applicationShouldHandleReopen, hasVisibleWindows=\(flag)")
         if !flag {
-            showMainWindow(nil)
+            windowController.showAndActivate()
         }
         return true
     }
 
-    @objc func showMainWindow(_ sender: Any?) {
-        logger.notice("showMainWindow called")
-        // Status-item menu actions run in menu tracking; defer until next run loop
-        // so the menu closes before activating and presenting the window.
-        DispatchQueue.main.async { [weak self] in
-            self?.windowController.showAndActivate()
-        }
-    }
-
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return false
+        return true
     }
 
     func applicationWillTerminate(_ aNotification: Notification) {
