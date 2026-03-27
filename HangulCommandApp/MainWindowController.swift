@@ -37,16 +37,25 @@ class MainWindowController: NSWindowController, NSWindowDelegate {
 class MainViewController: NSViewController {
 
     private let manager = KeyMappingManager.shared
+    private let lang = LanguageManager.shared
     private var cancellables = Set<AnyCancellable>()
 
     // UI elements that need updating
+    private var subtitleLabel: NSTextField!
+    private var keyTitleLabel: NSTextField!
     private var keyLabel: NSTextField!
     private var changeKeyButton: NSButton!
     private var statusIcon: NSImageView!
+    private var statusTitleLabel: NSTextField!
     private var statusLabel: NSTextField!
     private var toggleButton: NSButton!
     private var errorLabel: NSTextField!
     private var cardView: NSStackView!
+    private var instructionsTitleLabel: NSTextField!
+    private var instructionStep1Label: NSTextField!
+    private var instructionStep2Label: NSTextField!
+    private var instructionNoteLabel: NSTextField!
+    private var langSegment: NSSegmentedControl!
 
     override func loadView() {
         view = NSView()
@@ -58,6 +67,38 @@ class MainViewController: NSViewController {
         buildUI()
         bindManager()
         Task { await manager.checkCurrentStatus() }
+    }
+
+    // MARK: - Localization Helper
+
+    private func L(_ key: String) -> String {
+        lang.localized(key)
+    }
+
+    private func updateAllStrings() {
+        subtitleLabel.stringValue = L("app.subtitle")
+        keyTitleLabel.stringValue = L("key.switch")
+        changeKeyButton.title = L("button.change")
+        statusTitleLabel.stringValue = L("status")
+        instructionsTitleLabel.stringValue = L("instructions.title")
+        instructionStep1Label.stringValue = L("instructions.step1")
+        instructionStep2Label.stringValue = L("instructions.step2")
+        instructionNoteLabel.stringValue = L("instructions.note")
+
+        // Re-apply state-dependent labels
+        updateToggleUI(enabled: manager.isMappingEnabled)
+
+        // Resize window to fit new content
+        view.needsLayout = true
+        view.layoutSubtreeIfNeeded()
+        if let window = view.window {
+            let contentSize = window.contentView?.fittingSize ?? view.fittingSize
+            var frame = window.frame
+            let newHeight = contentSize.height + (frame.height - window.contentLayoutRect.height)
+            frame.origin.y += frame.height - newHeight
+            frame.size.height = newHeight
+            window.setFrame(frame, display: true)
+        }
     }
 
     // MARK: - Build UI
@@ -80,7 +121,9 @@ class MainViewController: NSViewController {
         ])
 
         // 1. Header
-        mainStack.addArrangedSubview(buildHeader())
+        let header = buildHeader()
+        mainStack.addArrangedSubview(header)
+        header.widthAnchor.constraint(equalTo: mainStack.widthAnchor, constant: -40).isActive = true
 
         // 2. Divider
         mainStack.addArrangedSubview(makeDivider())
@@ -110,10 +153,16 @@ class MainViewController: NSViewController {
     // MARK: - Header
 
     private func buildHeader() -> NSView {
-        let stack = NSStackView()
-        stack.orientation = .horizontal
-        stack.alignment = .centerY
-        stack.spacing = 12
+        let outerStack = NSStackView()
+        outerStack.orientation = .vertical
+        outerStack.alignment = .leading
+        outerStack.spacing = 4
+
+        // Top row: icon + title + lang toggle
+        let topRow = NSStackView()
+        topRow.orientation = .horizontal
+        topRow.alignment = .centerY
+        topRow.spacing = 12
 
         let icon = NSImageView()
         icon.image = NSImage(systemSymbolName: "keyboard.fill", accessibilityDescription: nil)
@@ -121,21 +170,33 @@ class MainViewController: NSViewController {
         icon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 28, weight: .regular)
         icon.setContentHuggingPriority(.required, for: .horizontal)
 
-        let titleStack = NSStackView()
-        titleStack.orientation = .vertical
-        titleStack.alignment = .leading
-        titleStack.spacing = 2
-
         let title = makeLabel("Hangul Key Changer", size: 17, weight: .bold)
-        let subtitle = makeLabel(String(localized: "app.subtitle"), size: 12, color: .secondaryLabelColor)
 
-        titleStack.addArrangedSubview(title)
-        titleStack.addArrangedSubview(subtitle)
+        // Language toggle
+        langSegment = NSSegmentedControl(labels: ["KO", "EN"], trackingMode: .selectOne, target: self, action: #selector(languageChanged))
+        langSegment.segmentStyle = .rounded
+        langSegment.controlSize = .small
+        langSegment.selectedSegment = lang.language == "ko" ? 0 : 1
+        langSegment.setContentHuggingPriority(.required, for: .horizontal)
 
-        stack.addArrangedSubview(icon)
-        stack.addArrangedSubview(titleStack)
+        topRow.addArrangedSubview(icon)
+        topRow.addArrangedSubview(title)
+        topRow.addArrangedSubview(langSegment)
 
-        return stack
+        // Subtitle below, full width
+        subtitleLabel = makeLabel(L("app.subtitle"), size: 12, color: .secondaryLabelColor)
+        subtitleLabel.maximumNumberOfLines = 1
+
+        outerStack.addArrangedSubview(topRow)
+        outerStack.addArrangedSubview(subtitleLabel)
+
+        return outerStack
+    }
+
+    @objc private func languageChanged() {
+        let selected = langSegment.selectedSegment == 0 ? "ko" : "en"
+        lang.setLanguage(selected)
+        updateAllStrings()
     }
 
     // MARK: - Card (Key + Status + Toggle)
@@ -162,8 +223,9 @@ class MainViewController: NSViewController {
         keyIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
         keyIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        let keyTitle = makeLabel(String(localized: "key.switch"), size: 12, color: .secondaryLabelColor)
-        keyTitle.setContentHuggingPriority(.required, for: .horizontal)
+        keyTitleLabel = makeLabel(L("key.switch"), size: 12, color: .secondaryLabelColor)
+        keyTitleLabel.widthAnchor.constraint(equalToConstant: 70).isActive = true
+        keyTitleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
         keyLabel = makeLabel(manager.sourceKeyInfo.displayName, size: 13, weight: .medium)
         keyLabel.alignment = .right
@@ -171,13 +233,13 @@ class MainViewController: NSViewController {
         keyLabel.maximumNumberOfLines = 1
         keyLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        changeKeyButton = NSButton(title: String(localized: "button.change"), target: self, action: #selector(changeKeyTapped))
+        changeKeyButton = NSButton(title: L("button.change"), target: self, action: #selector(changeKeyTapped))
         changeKeyButton.bezelStyle = .rounded
         changeKeyButton.controlSize = .small
         changeKeyButton.setContentHuggingPriority(.required, for: .horizontal)
 
         keyRow.addArrangedSubview(keyIcon)
-        keyRow.addArrangedSubview(keyTitle)
+        keyRow.addArrangedSubview(keyTitleLabel)
         keyRow.addArrangedSubview(keyLabel)
         keyRow.addArrangedSubview(changeKeyButton)
 
@@ -191,7 +253,7 @@ class MainViewController: NSViewController {
         let statusRow = NSStackView()
         statusRow.orientation = .horizontal
         statusRow.alignment = .centerY
-        statusRow.spacing = 4
+        statusRow.spacing = 8
 
         statusIcon = NSImageView()
         statusIcon.image = NSImage(systemSymbolName: "xmark.circle.fill", accessibilityDescription: nil)
@@ -199,22 +261,23 @@ class MainViewController: NSViewController {
         statusIcon.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 12, weight: .regular)
         statusIcon.setContentHuggingPriority(.required, for: .horizontal)
 
-        let statusTitle = makeLabel(String(localized: "status"), size: 12, color: .secondaryLabelColor)
-        statusTitle.setContentHuggingPriority(.required, for: .horizontal)
+        statusTitleLabel = makeLabel(L("status"), size: 12, color: .secondaryLabelColor)
+        statusTitleLabel.widthAnchor.constraint(equalToConstant: 70).isActive = true
+        statusTitleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
-        statusLabel = makeLabel(String(localized: "status.disabled"), size: 13, weight: .medium)
+        statusLabel = makeLabel(L("status.disabled"), size: 13, weight: .medium)
         statusLabel.textColor = .systemRed
         statusLabel.alignment = .right
 
         statusRow.addArrangedSubview(statusIcon)
-        statusRow.addArrangedSubview(statusTitle)
+        statusRow.addArrangedSubview(statusTitleLabel)
         statusRow.addArrangedSubview(statusLabel)
 
         card.addArrangedSubview(statusRow)
         statusRow.widthAnchor.constraint(equalTo: card.widthAnchor, constant: -28).isActive = true
 
         // Toggle button
-        toggleButton = NSButton(title: String(localized: "button.enable"), target: self, action: #selector(toggleTapped))
+        toggleButton = NSButton(title: L("button.enable"), target: self, action: #selector(toggleTapped))
         toggleButton.bezelStyle = .rounded
         toggleButton.isBordered = false
         toggleButton.wantsLayer = true
@@ -239,31 +302,35 @@ class MainViewController: NSViewController {
         stack.alignment = .leading
         stack.spacing = 8
 
-        let sectionTitle = makeLabel(String(localized: "instructions.title"), size: 12, weight: .semibold)
-        stack.addArrangedSubview(sectionTitle)
+        instructionsTitleLabel = makeLabel(L("instructions.title"), size: 12, weight: .semibold)
+        stack.addArrangedSubview(instructionsTitleLabel)
 
         let rows = NSStackView()
         rows.orientation = .vertical
         rows.alignment = .leading
         rows.spacing = 6
 
-        rows.addArrangedSubview(makeInstructionRow(number: 1, text: String(localized: "instructions.step1")))
-        rows.addArrangedSubview(makeInstructionRow(number: 2, text: String(localized: "instructions.step2")))
+        instructionStep1Label = makeLabel(L("instructions.step1"), size: 11)
+        instructionStep1Label.maximumNumberOfLines = 0
+        instructionStep1Label.preferredMaxLayoutWidth = 260
+        rows.addArrangedSubview(makeInstructionRow(number: 1, label: instructionStep1Label))
+
+        instructionStep2Label = makeLabel(L("instructions.step2"), size: 11)
+        instructionStep2Label.maximumNumberOfLines = 0
+        instructionStep2Label.preferredMaxLayoutWidth = 260
+        rows.addArrangedSubview(makeInstructionRow(number: 2, label: instructionStep2Label))
+
         stack.addArrangedSubview(rows)
 
-        let note = makeLabel(
-            String(localized: "instructions.note"),
-            size: 10,
-            color: .secondaryLabelColor
-        )
-        note.maximumNumberOfLines = 0
-        note.preferredMaxLayoutWidth = 300
-        stack.addArrangedSubview(note)
+        instructionNoteLabel = makeLabel(L("instructions.note"), size: 10, color: .secondaryLabelColor)
+        instructionNoteLabel.maximumNumberOfLines = 0
+        instructionNoteLabel.preferredMaxLayoutWidth = 300
+        stack.addArrangedSubview(instructionNoteLabel)
 
         return stack
     }
 
-    private func makeInstructionRow(number: Int, text: String) -> NSView {
+    private func makeInstructionRow(number: Int, label: NSTextField) -> NSView {
         let row = NSStackView()
         row.orientation = .horizontal
         row.alignment = .centerY
@@ -274,10 +341,6 @@ class MainViewController: NSViewController {
         badge.widthAnchor.constraint(equalToConstant: 16).isActive = true
         badge.heightAnchor.constraint(equalToConstant: 16).isActive = true
         badge.setContentHuggingPriority(.required, for: .horizontal)
-
-        let label = makeLabel(text, size: 11)
-        label.maximumNumberOfLines = 0
-        label.preferredMaxLayoutWidth = 260
 
         row.addArrangedSubview(badge)
         row.addArrangedSubview(label)
@@ -314,8 +377,9 @@ class MainViewController: NSViewController {
         manager.$isLoading
             .receive(on: RunLoop.main)
             .sink { [weak self] loading in
-                self?.toggleButton.isEnabled = !loading
-                self?.toggleButton.title = loading ? String(localized: "button.processing") : (self?.manager.isMappingEnabled == true ? String(localized: "button.disable") : String(localized: "button.enable"))
+                guard let self else { return }
+                self.toggleButton.isEnabled = !loading
+                self.toggleButton.title = loading ? L("button.processing") : (manager.isMappingEnabled ? L("button.disable") : L("button.enable"))
             }
             .store(in: &cancellables)
 
@@ -358,11 +422,11 @@ class MainViewController: NSViewController {
         )
         statusIcon.contentTintColor = enabled ? .controlAccentColor : .systemGray
 
-        statusLabel.stringValue = enabled ? String(localized: "status.enabled") : String(localized: "status.disabled")
+        statusLabel.stringValue = enabled ? L("status.enabled") : L("status.disabled")
         statusLabel.textColor = enabled ? .systemGreen : .systemRed
 
         // Toggle button
-        toggleButton.title = enabled ? String(localized: "button.disable") : String(localized: "button.enable")
+        toggleButton.title = enabled ? L("button.disable") : L("button.enable")
         toggleButton.layer?.backgroundColor = enabled ? NSColor.systemRed.cgColor : NSColor.controlAccentColor.cgColor
 
         // Change key button disabled while active
@@ -371,10 +435,10 @@ class MainViewController: NSViewController {
 
     private func showErrorAlert(_ message: String) {
         let alert = NSAlert()
-        alert.messageText = String(localized: "error.title")
+        alert.messageText = L("error.title")
         alert.informativeText = message
         alert.alertStyle = .warning
-        alert.addButton(withTitle: String(localized: "button.confirm"))
+        alert.addButton(withTitle: L("button.confirm"))
         if let window = view.window {
             alert.beginSheetModal(for: window)
         }
@@ -387,12 +451,12 @@ class MainViewController: NSViewController {
             if manager.isMappingEnabled {
                 let success = await manager.disableMapping()
                 if !success {
-                    showErrorAlert(String(localized: "error.disable"))
+                    showErrorAlert(L("error.disable"))
                 }
             } else {
                 let success = await manager.enableMapping()
                 if !success {
-                    showErrorAlert(String(localized: "error.enable"))
+                    showErrorAlert(L("error.enable"))
                 }
             }
         }
@@ -443,6 +507,7 @@ class MainViewController: NSViewController {
 class KeyCaptureSheetViewController: NSViewController {
 
     private let manager: KeyMappingManager
+    private let lang = LanguageManager.shared
     private let panel: NSPanel
     private var cancellable: AnyCancellable?
     private var pulseTimer: Timer?
@@ -492,6 +557,10 @@ class KeyCaptureSheetViewController: NSViewController {
         pulseTimer?.invalidate()
     }
 
+    private func L(_ key: String) -> String {
+        lang.localized(key)
+    }
+
     private func buildUI() {
         let stack = NSStackView()
         stack.orientation = .vertical
@@ -512,13 +581,13 @@ class KeyCaptureSheetViewController: NSViewController {
         iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 40, weight: .regular)
         stack.addArrangedSubview(iconView)
 
-        mainLabel = NSTextField(labelWithString: String(localized: "keycapture.prompt"))
+        mainLabel = NSTextField(labelWithString: L("keycapture.prompt"))
         mainLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         mainLabel.alignment = .center
         mainLabel.maximumNumberOfLines = 0
         stack.addArrangedSubview(mainLabel)
 
-        subLabel = NSTextField(labelWithString: String(localized: "keycapture.hint"))
+        subLabel = NSTextField(labelWithString: L("keycapture.hint"))
         subLabel.font = NSFont.systemFont(ofSize: 11, weight: .regular)
         subLabel.textColor = .secondaryLabelColor
         subLabel.alignment = .center
@@ -528,7 +597,7 @@ class KeyCaptureSheetViewController: NSViewController {
         buttonsStack.orientation = .horizontal
         buttonsStack.spacing = 12
 
-        let cancelButton = NSButton(title: String(localized: "button.cancel"), target: self, action: #selector(cancelTapped))
+        let cancelButton = NSButton(title: L("button.cancel"), target: self, action: #selector(cancelTapped))
         cancelButton.bezelStyle = .rounded
         cancelButton.controlSize = .small
         buttonsStack.addArrangedSubview(cancelButton)
@@ -551,10 +620,10 @@ class KeyCaptureSheetViewController: NSViewController {
         // Replace buttons
         buttonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
-        let retryButton = NSButton(title: String(localized: "button.retry"), target: self, action: #selector(retryTapped))
+        let retryButton = NSButton(title: L("button.retry"), target: self, action: #selector(retryTapped))
         retryButton.bezelStyle = .rounded
 
-        let confirmButton = NSButton(title: String(localized: "button.confirm"), target: self, action: #selector(confirmTapped))
+        let confirmButton = NSButton(title: L("button.confirm"), target: self, action: #selector(confirmTapped))
         confirmButton.bezelStyle = .rounded
         confirmButton.keyEquivalent = "\r"
 
@@ -581,14 +650,14 @@ class KeyCaptureSheetViewController: NSViewController {
 
     @objc private func retryTapped() {
         subLabel.isHidden = false
-        mainLabel.stringValue = String(localized: "keycapture.prompt")
+        mainLabel.stringValue = L("keycapture.prompt")
         mainLabel.font = NSFont.systemFont(ofSize: 15, weight: .semibold)
         iconView.image = NSImage(systemSymbolName: "keyboard", accessibilityDescription: nil)
         iconView.contentTintColor = .controlAccentColor
 
         // Reset buttons
         buttonsStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        let cancelButton = NSButton(title: String(localized: "button.cancel"), target: self, action: #selector(cancelTapped))
+        let cancelButton = NSButton(title: L("button.cancel"), target: self, action: #selector(cancelTapped))
         cancelButton.bezelStyle = .rounded
         cancelButton.controlSize = .small
         buttonsStack.addArrangedSubview(cancelButton)
