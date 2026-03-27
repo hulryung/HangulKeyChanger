@@ -1,6 +1,6 @@
 # Hangul Key Changer
 
-macOS에서 **오른쪽 Command 키**로 한영 전환을 할 수 있게 해주는 유틸리티입니다.
+macOS에서 **원하는 키 하나로 한영 전환**을 할 수 있게 해주는 가벼운 유틸리티입니다.
 
 ![macOS](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Swift](https://img.shields.io/badge/Swift-5.0-orange)
@@ -27,10 +27,11 @@ macOS를 쓰면서 한영 전환이 불편했던 경험, 한 번쯤 있으시죠
 ## 주요 기능
 
 - **원하는 키를 한영키로** — 오른쪽 Command, Caps Lock 등 원하는 키를 선택
-- **원클릭 활성화** — 버튼 하나로 키 매핑 + 시스템 단축키 자동 설정
-- **재부팅해도 유지** — LaunchAgent로 부팅 시 자동 적용 (앱 실행 불필요)
-- **메뉴 바 상주** — 상태 바에서 바로 제어
-- **한국어/영어 UI** — 시스템 언어에 따라 자동 전환
+- **원클릭 활성화** — 버튼 하나로 키 매핑 + 시스템 단축키 자동 설정, 관리자 비밀번호 불필요
+- **재부팅해도 유지** — 로그인 항목으로 등록되어 부팅 시 자동 적용
+- **앱 실행 불필요** — 한번 설정하면 앱을 종료해도 키 매핑이 계속 동작
+- **한국어/영어 UI** — 앱 내에서 KO/EN 버튼으로 즉시 전환
+- **특별한 권한 불필요** — 드라이버, 커널 확장, 접근성 권한 없이 동작
 
 ## 설치
 
@@ -50,12 +51,14 @@ Apple 공증(Notarization)을 완료한 앱이므로 별도의 보안 경고 없
 
 1. 앱을 실행합니다
 2. **변경** 버튼을 눌러 한영키로 사용할 키를 선택합니다 (기본: 오른쪽 Command)
-3. **활성화** 버튼을 누르고 관리자 비밀번호를 입력합니다
+3. **활성화** 버튼을 누릅니다
 4. 끝! 선택한 키로 한영 전환이 됩니다
 
 <p align="center">
   <code>오른쪽 Command ⌘</code> → 한영 전환
 </p>
+
+앱을 종료해도 키 매핑은 계속 동작합니다. 재부팅 후에도 자동으로 다시 적용됩니다.
 
 ## 제거
 
@@ -73,18 +76,26 @@ Hangul Key Changer는 세 단계로 동작합니다:
 
 1. **키 리매핑**: macOS 내장 `hidutil`을 사용하여 선택한 키를 F18로 변환합니다
 2. **입력 소스 단축키 설정**: 시스템 환경설정의 "이전 입력 소스 선택" 단축키를 F18로 변경합니다
-3. **부팅 시 자동 적용**: `/Library/LaunchAgents`에 plist를 등록하여 재부팅 후에도 매핑이 유지됩니다
+3. **부팅 시 자동 적용**: `SMAppService`로 로그인 항목에 등록하여 재부팅 후에도 매핑이 유지됩니다
 
 외부 드라이버나 커널 확장을 사용하지 않으며, Karabiner처럼 백그라운드 데몬이 상주하지 않습니다. 시스템이 제공하는 기본 메커니즘만 활용합니다.
 
 ### 기술 스택
 
-- **언어**: Swift 5
-- **UI 프레임워크**: AppKit (순수 Cocoa, SwiftUI 미사용)
-- **키 매핑**: `hidutil` (HID Usage Table 기반)
-- **지속성**: LaunchAgent
-- **최소 요구사항**: macOS 14.0 Sonoma 이상
-- **서명**: Developer ID + Apple Notarization
+| 항목 | 기술 |
+|---|---|
+| 언어 | Swift 5 |
+| UI 프레임워크 | AppKit (순수 Cocoa) |
+| 키 매핑 | `hidutil` (HID Usage Table 기반) |
+| 지속성 | SMAppService (로그인 항목) |
+| 최소 요구사항 | macOS 14.0 Sonoma 이상 |
+| 서명 | Developer ID + Apple Notarization |
+
+## 자유롭게 사용하세요
+
+이 앱은 특별한 권한을 요구하지 않습니다. 접근성 권한, 입력 모니터링, 관리자 비밀번호 모두 필요 없습니다. macOS가 기본으로 제공하는 `hidutil`만 사용하므로 시스템에 부담을 주지 않습니다.
+
+소스 코드는 MIT 라이선스로 공개되어 있으니, 자유롭게 사용하고 수정하세요.
 
 ## 소스에서 빌드
 
@@ -94,13 +105,38 @@ cd HangulKeyChanger
 xcodebuild -scheme HangulCommandApp build
 ```
 
+## 변경 이력
+
+### v2.4.0
+- 메뉴 바 앱에서 독립 실행 앱으로 변경
+- 관리자 비밀번호 없이 활성화 가능 (SMAppService 사용)
+- 앱 내 KO/EN 언어 전환 기능 추가
+- About 패널 및 메뉴 바 추가
+- 하단에 버전, 웹사이트/GitHub/X 링크 표시
+- 앱 이름을 "Hangul Key Changer"로 변경
+
+### v2.3.1
+- 빌드 아티팩트에 앱 아이콘 포함
+
+### v2.3.0
+- 다크 모드 지원
+- 코드 품질 개선 및 공증 준비
+
 ## 라이선스
 
 [MIT](LICENSE)
 
+## 링크
+
+- [웹사이트](https://hkc.hulryung.com)
+- [GitHub](https://github.com/hulryung/HangulKeyChanger)
+- [X (Twitter)](https://x.com/hulryung)
+
 ---
 
 <div align="center">
+
+저는 여전히 3벌식을 사랑합니다.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-yellow)](https://buymeacoffee.com/hulryung)
 
