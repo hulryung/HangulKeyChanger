@@ -41,6 +41,12 @@ macOS를 쓰면서 한영 전환이 불편했던 경험, 한 번쯤 있으시죠
 brew install hulryung/tap/hangulkeychanger
 ```
 
+> **v2.3.0 이하에서 업그레이드 시** 앱 이름이 변경되어 `brew upgrade`가 실패할 수 있습니다. 이 경우 제거 후 재설치하세요:
+> ```bash
+> brew uninstall --cask hangulkeychanger --force
+> brew install hulryung/tap/hangulkeychanger
+> ```
+
 ### DMG 다운로드
 
 [Releases](https://github.com/hulryung/HangulKeyChanger/releases) 페이지에서 최신 DMG 파일을 다운로드하고, 열어서 앱을 `/Applications`에 드래그하세요.

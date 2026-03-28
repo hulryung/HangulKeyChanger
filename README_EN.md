@@ -41,6 +41,12 @@ The common workaround is [Karabiner-Elements](https://karabiner-elements.pqrs.or
 brew install hulryung/tap/hangulkeychanger
 ```
 
+> **Upgrading from v2.3.0 or earlier?** The app was renamed, so `brew upgrade` may fail. In that case, uninstall and reinstall:
+> ```bash
+> brew uninstall --cask hangulkeychanger --force
+> brew install hulryung/tap/hangulkeychanger
+> ```
+
 ### DMG Download
 
 Download the latest DMG from [Releases](https://github.com/hulryung/HangulKeyChanger/releases), open it, and drag the app to `/Applications`.
